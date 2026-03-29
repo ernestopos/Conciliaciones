@@ -1,69 +1,45 @@
 # ms-security
 
-Microservicio de seguridad para la plataforma **Conciliaciones**.
+Microservicio de seguridad con arquitectura hexagonal (ports & adapters) para Conciliaciones.
 
-## Responsabilidad
+## Endpoints de demo
 
-Este micro encapsula la integración con Keycloak y expone APIs funcionales para:
-
-- autenticación
-- refresh token
-- logout
-- consulta del usuario autenticado
-- administración de usuarios
-- administración de roles
-- auditoría de seguridad
-
-## Stack
-
-- Java 21
-- Spring Boot 3.3.x
-- Spring Security
-- OAuth2 Resource Server
-- OpenAPI / Swagger
-- PostgreSQL
-
-## Endpoints base
-
-- `POST /api/security/auth/login`
-- `POST /api/security/auth/refresh`
-- `POST /api/security/auth/logout`
-- `GET /api/security/me`
-- `GET /api/security/me/roles`
-- `GET /api/security/me/permissions`
-- `POST /api/security/users`
-- `GET /api/security/users`
-- `GET /api/security/users/{userId}`
-- `PUT /api/security/users/{userId}`
-- `PATCH /api/security/users/{userId}/status`
-- `PATCH /api/security/users/{userId}/reset-password`
-- `POST /api/security/users/{userId}/roles`
-- `GET /api/security/roles`
-- `POST /api/security/roles`
-- `GET /api/security/roles/{roleName}`
-- `PUT /api/security/roles/{roleName}`
-- `POST /api/security/roles/{roleName}/permissions`
-- `GET /api/security/audit`
-- `GET /api/security/audit/{eventId}`
+- `POST /auth/login`
+- `GET /auth/validate`
+- `GET /auth/roles`
 
 ## Swagger
 
 - UI: `http://localhost:8080/swagger-ui.html`
 - OpenAPI: `http://localhost:8080/v3/api-docs`
 
-## Ejecución local
+## Integración Keycloak (conciliaciones-iac)
+
+Variables principales:
+
+- `KEYCLOAK_SERVER_URL` (default `http://localhost:8081`)
+- `KEYCLOAK_REALM` (default `conciliaciones`)
+- `KEYCLOAK_CLIENT_ID` (default `conciliaciones-orchestrator`)
+- `KEYCLOAK_CLIENT_SECRET` (default `orchestrator-secret-2026`)
+
+## Resilience4j
+
+Configurado sobre el adapter de Keycloak con:
+
+- retry (`resilience4j.retry.instances.keycloakClient`)
+- circuit breaker (`resilience4j.circuitbreaker.instances.keycloakClient`)
+
+## Auditoría
+
+Tabla: `security_audit_log`
+
+Campos clave de trazabilidad:
+
+- `valor_antes` (JSONB)
+- `valor_despues` (JSONB)
+
+## Docker
 
 ```bash
-mvn spring-boot:run
+docker build -t ms-security:local .
 ```
-
-## Notas
-
-Este proyecto es un **cascarón funcional/base**. Incluye:
-
-- diseño de paquetes
-- contratos REST
-- configuración de seguridad
-- servicios stub para avanzar en la implementación
-
-La integración real con Keycloak Admin API y token endpoint puede conectarse en una siguiente iteración.
