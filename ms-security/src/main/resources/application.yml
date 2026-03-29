@@ -1,0 +1,45 @@
+server:
+  port: 8080
+
+spring:
+  main:
+    banner-mode: console
+  application:
+    name: ms-security
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5440/conciliaciones}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres123}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SECURITY_JWT_ISSUER_URI:http://localhost:8081/realms/conciliaciones}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: alpha
+    tagsSorter: alpha
+
+security:
+  keycloak:
+    server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8081}
+    realm: ${KEYCLOAK_REALM:conciliaciones}
+    client-id: ${KEYCLOAK_CLIENT_ID:conciliaciones-security}
+    client-secret: ${KEYCLOAK_CLIENT_SECRET:security-secret-2026}
+    admin-username: ${KEYCLOAK_ADMIN_USERNAME:admin}
+    admin-password: ${KEYCLOAK_ADMIN_PASSWORD:admin123}

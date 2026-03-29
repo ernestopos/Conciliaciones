@@ -16,6 +16,11 @@ services:
       - ../docker/postgres/init:/docker-entrypoint-initdb.d
     networks:
       - conciliaciones_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 volumes:
   conciliaciones_postgres_data:
