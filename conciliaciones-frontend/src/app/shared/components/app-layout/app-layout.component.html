@@ -1,0 +1,9 @@
+<app-top-toolbar [userName]="userName()" (menuToggle)="toggleMenu()" (logoutClick)="logout()" />
+<mat-sidenav-container class="shell">
+  <mat-sidenav [opened]="sidenavOpen()" mode="side">
+    <app-side-menu [items]="menu" />
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <main class="content"><router-outlet /></main>
+  </mat-sidenav-content>
+</mat-sidenav-container>
