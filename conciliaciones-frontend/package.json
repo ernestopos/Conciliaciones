@@ -3,10 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "clean": "node -e \"const fs=require('fs');['node_modules','.angular','dist','package-lock.json'].forEach(p=>fs.rmSync(p,{recursive:true,force:true}));console.log('clean ok')\"",
-    "reinstall": "npm run clean && npm install",
     "start": "ng serve",
-    "start:clean": "npm run reinstall && ng serve",
     "build": "ng build",
     "test": "ng test"
   },
@@ -23,7 +20,7 @@
     "@angular/router": "^18.2.0",
     "rxjs": "^7.8.1",
     "tslib": "^2.6.2",
-    "zone.js": "~0.14.10"
+    "zone.js": "^0.14.10"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^18.2.0",
