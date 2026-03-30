@@ -10,7 +10,7 @@ import { DomainPlaceholderComponent } from './features/placeholders/domain-place
 export const routes: Routes = [
   { path: 'auth/login', component: LoginPageComponent },
   {
-    path: 'app',
+    path: '',
     component: AppLayoutComponent,
     canActivate: [authGuard],
     children: [
@@ -30,6 +30,5 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' }
     ]
   },
-  { path: '', pathMatch: 'full', redirectTo: 'auth/login' },
-  { path: '**', redirectTo: '/auth/login' }
+  { path: '**', redirectTo: '/dashboard' }
 ];
