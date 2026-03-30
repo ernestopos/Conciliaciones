@@ -3,14 +3,13 @@ package com.conciliaciones.mssecurity.application.usecase;
 import com.conciliaciones.mssecurity.application.port.in.AuditUseCase;
 import com.conciliaciones.mssecurity.application.port.out.AuditPersistencePort;
 import com.conciliaciones.mssecurity.domain.model.AuditActionResult;
-import com.conciliaciones.mssecurity.infrastructure.adapter.out.persistence.AuditLogEntity;
+import com.conciliaciones.domain.entity.AuditLogEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.OffsetDateTime;
 
 @Slf4j
 @Service
@@ -30,14 +29,14 @@ public class AuditService implements AuditUseCase {
                          String estado) {
         log.info("LOG INICIO X = register");
         AuditLogEntity auditLogEntity = AuditLogEntity.builder()
-                .usuario(usuario)
-                .accion(accion)
-                .fecha(OffsetDateTime.now())
-                .resultado(resultado.name())
-                .detalle(detalle)
-                .estado(estado)
-                .valorAntes(serializeSafe(valorAntes))
-                .valorDespues(serializeSafe(valorDespues))
+                                .entityName("SECURITY")
+                .entityId(usuario == null ? "NA" : usuario)
+                                .actionId(1L)
+                                .eventTimestamp(java.time.LocalDateTime.now())
+                                .username(usuario)
+                                .details(detalle + " | resultado=" + resultado.name() + " | estado=" + estado)
+                                .oldValues(serializeSafe(valorAntes))
+                .newValues(serializeSafe(valorDespues))
                 .build();
 
         auditPersistencePort.save(auditLogEntity);

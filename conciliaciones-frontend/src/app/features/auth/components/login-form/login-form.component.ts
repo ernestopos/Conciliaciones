@@ -64,7 +64,7 @@ export class LoginFormComponent {
         }
 
         this.snackBar.open(`Bienvenido ${result.user?.name ?? ''}`, 'Cerrar', { duration: 2200 });
-        this.router.navigate(['/app/dashboard']);
+        this.router.navigate(['/dashboard']);
       },
       error: () => {
         this.loading = false;
