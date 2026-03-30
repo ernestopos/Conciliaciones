@@ -13,9 +13,9 @@ Frontend base orientado a demo corporativa con Angular + Angular Material + Reac
 ## Pantallas creadas
 
 1. `auth/login` (login responsive 2 columnas, captcha, mostrar/ocultar contraseña).
-2. `app/dashboard` (KPIs y auditoría reciente mock).
-3. `app/conciliacion/source-files` (tabla base + filtros + paginación/sort).
-4. `app/conciliacion/processing-executions` (tabla base + filtros + paginación/sort).
+2. `dashboard` (KPIs y auditoría reciente mock).
+3. `conciliacion/source-files` (tabla base + filtros + paginación/sort).
+4. `conciliacion/processing-executions` (tabla base + filtros + paginación/sort).
 5. Placeholders navegables para seguridad, maestros, pagos, auditoría y reportes.
 
 ## Componentes reutilizables creados
@@ -72,13 +72,3 @@ Se generaron modelos y vistas base alineadas a estas entidades.
 2. Inyectar token en `authInterceptor`.
 3. Reemplazar servicios mock por `HttpClient` contra APIs reales.
 4. Añadir mapeadores DTO -> modelo UI según contratos backend.
-
-## Troubleshooting rápido (`ng serve` en blanco)
-
-Si la app muestra pantalla en blanco, verificar:
-
-1. Dependencias instaladas (`npm install`).
-2. Polyfills activos (`angular.json` apunta a `src/polyfills.ts` y allí se importa `zone.js`).
-3. Reiniciar el dev server después de cambios de configuración:
-   - `Ctrl + C`
-   - `npm run start`

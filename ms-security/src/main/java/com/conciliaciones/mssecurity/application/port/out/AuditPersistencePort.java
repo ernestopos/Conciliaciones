@@ -1,6 +1,6 @@
 package com.conciliaciones.mssecurity.application.port.out;
 
-import com.conciliaciones.mssecurity.infrastructure.adapter.out.persistence.AuditLogEntity;
+import com.conciliaciones.domain.entity.AuditLogEntity;
 
 public interface AuditPersistencePort {
 
