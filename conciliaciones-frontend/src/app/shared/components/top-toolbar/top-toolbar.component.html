@@ -1,0 +1,8 @@
+<header class="toolbar">
+  <button mat-icon-button type="button" (click)="menuToggle.emit()"><mat-icon>menu</mat-icon></button>
+  <div class="title">Conciliaciones</div>
+  <div class="actions">
+    <span>{{ userName }}</span>
+    <button mat-icon-button type="button" (click)="logoutClick.emit()"><mat-icon>logout</mat-icon></button>
+  </div>
+</header>
