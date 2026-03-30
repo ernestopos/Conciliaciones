@@ -13,9 +13,9 @@ Frontend base orientado a demo corporativa con Angular + Angular Material + Reac
 ## Pantallas creadas
 
 1. `auth/login` (login responsive 2 columnas, captcha, mostrar/ocultar contraseña).
-2. `app/dashboard` (KPIs y auditoría reciente mock).
-3. `app/conciliacion/source-files` (tabla base + filtros + paginación/sort).
-4. `app/conciliacion/processing-executions` (tabla base + filtros + paginación/sort).
+2. `dashboard` (KPIs y auditoría reciente mock).
+3. `conciliacion/source-files` (tabla base + filtros + paginación/sort).
+4. `conciliacion/processing-executions` (tabla base + filtros + paginación/sort).
 5. Placeholders navegables para seguridad, maestros, pagos, auditoría y reportes.
 
 ## Componentes reutilizables creados
@@ -72,24 +72,3 @@ Se generaron modelos y vistas base alineadas a estas entidades.
 2. Inyectar token en `authInterceptor`.
 3. Reemplazar servicios mock por `HttpClient` contra APIs reales.
 4. Añadir mapeadores DTO -> modelo UI según contratos backend.
-
-## Troubleshooting rápido (`ng serve` en blanco)
-
-Si la app muestra pantalla en blanco, verificar:
-
-1. Dependencias instaladas (`npm install`).
-2. Polyfills activos (`angular.json` declara `zone.js`) y `main.ts` también lo importa explícitamente.
-3. Reiniciar el dev server después de cambios de configuración:
-   - `Ctrl + C`
-   - `npm run start`
-4. La app también está configurada con `provideExperimentalZonelessChangeDetection()` como respaldo para evitar bloqueos por Zone en runtime.
-
-### Notas sobre `npm install` en Windows
-
-- Mensajes `npm warn deprecated ...` no bloquean la ejecución (son advertencias de dependencias transitivas).
-- Mensajes `npm warn cleanup EPERM ...` indican archivos bloqueados por el sistema (normalmente antivirus/editor/terminal).
-- Si pasa, usar:
-  1. Cerrar VS Code y terminales sobre la carpeta.
-  2. Ejecutar terminal como Administrador.
-  3. `npm run reinstall`
-  4. `npm run start`

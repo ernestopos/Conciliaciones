@@ -1,5 +1,6 @@
 package com.conciliaciones.mssecurity.infrastructure.adapter.out.persistence;
 
+import com.conciliaciones.domain.entity.AuditLogEntity;
 import com.conciliaciones.mssecurity.application.port.out.AuditPersistencePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
