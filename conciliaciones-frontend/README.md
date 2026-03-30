@@ -72,13 +72,3 @@ Se generaron modelos y vistas base alineadas a estas entidades.
 2. Inyectar token en `authInterceptor`.
 3. Reemplazar servicios mock por `HttpClient` contra APIs reales.
 4. Añadir mapeadores DTO -> modelo UI según contratos backend.
-
-## Troubleshooting rápido (`ng serve` en blanco)
-
-Si la app muestra pantalla en blanco, verificar:
-
-1. Dependencias instaladas (`npm install`).
-2. Polyfills activos (se configuró `zone.js` en `angular.json`).
-3. Reiniciar el dev server después de cambios de configuración:
-   - `Ctrl + C`
-   - `npm run start`
