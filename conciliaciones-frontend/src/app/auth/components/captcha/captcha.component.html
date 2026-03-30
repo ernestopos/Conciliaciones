@@ -1,0 +1,15 @@
+<div class="captcha-container">
+  <div class="captcha-header">
+    <p class="captcha-text">Valide que no es un robot</p>
+    <button mat-icon-button type="button" (click)="regenerate()" aria-label="Recargar captcha">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
+
+  <p class="captcha-challenge">¿Cuánto es {{ firstNumber }} + {{ secondNumber }}?</p>
+
+  <mat-form-field appearance="outline" class="captcha-field">
+    <mat-label>Respuesta</mat-label>
+    <input matInput type="number" [formControl]="answerControl" />
+  </mat-form-field>
+</div>
