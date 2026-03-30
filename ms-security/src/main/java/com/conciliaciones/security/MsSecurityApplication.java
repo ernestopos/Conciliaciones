@@ -6,8 +6,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 
 import com.conciliaciones.security.infrastructure.config.KeycloakProperties;
 
-@SpringBootApplication
-@EnableConfigurationProperties(KeycloakProperties.class)
+//@SpringBootApplication
+//@EnableConfigurationProperties(KeycloakProperties.class)
 public class MsSecurityApplication {
 
     public static void main(String[] args) {
