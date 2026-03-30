@@ -1,9 +1,21 @@
 SET search_path TO reconciliation;
 
+CREATE TABLE IF NOT EXISTS security_audit_log (
+    id BIGSERIAL PRIMARY KEY,
+    usuario VARCHAR(120) NOT NULL,
+    accion VARCHAR(120) NOT NULL,
+    fecha TIMESTAMP WITH TIME ZONE NOT NULL,
+    resultado VARCHAR(30) NOT NULL,
+    detalle VARCHAR(500),
+    estado VARCHAR(40),
+    valor_antes JSONB,
+    valor_despues JSONB
+);
+
 -- =========================================================
 -- LIMPIEZA OPCIONAL PARA REEJECUTAR PRUEBAS
 -- =========================================================
-DELETE FROM audit_log;
+DELETE FROM security_audit_log;
 DELETE FROM commission_payment_detail;
 DELETE FROM commission_payment;
 DELETE FROM reconciliation_case;
@@ -1580,44 +1592,54 @@ VALUES
 -- =========================================================
 -- 16. AUDITORIA
 -- =========================================================
-INSERT INTO audit_log (
-    entity_name,
-    entity_id,
-    action_id,
-    username,
-    event_timestamp,
-    old_values,
-    new_values,
-    details
+INSERT INTO security_audit_log (
+    usuario,
+    accion,
+    fecha,
+    resultado,
+    detalle,
+    estado,
+    valor_antes,
+    valor_despues
 )
 VALUES
 (
-    'source_file',
-    (SELECT id::varchar FROM source_file WHERE original_file_name = 'sentara_statement_20260309.xlsx'),
-    (SELECT id FROM parameter WHERE parameter_group = 'AUDIT_ACTION_TYPE' AND name = 'UPLOAD'),
     'seed_user',
+    'UPLOAD_FILE',
     CURRENT_TIMESTAMP,
+    'SUCCESS',
+    'Carga de archivo de prueba para proceso de conciliación',
+    'COMPLETED',
     NULL,
-    '{"status":"PROCESSED","file":"sentara_statement_20260309.xlsx"}'::jsonb,
-    'Carga de archivo de prueba para proceso de conciliación'
+    '{"status":"PROCESSED","file":"sentara_statement_20260309.xlsx"}'::jsonb
 ),
 (
-    'reconciliation_case',
-    (SELECT id::varchar FROM reconciliation_case WHERE description LIKE 'La póliza está cancelada%' LIMIT 1),
-    (SELECT id FROM parameter WHERE parameter_group = 'AUDIT_ACTION_TYPE' AND name = 'PROCESS'),
     'recon_engine',
+    'PROCESS_RECONCILIATION_CASE',
     CURRENT_TIMESTAMP,
+    'SUCCESS',
+    'Caso detectado automáticamente por motor de conciliación',
+    'OPEN',
     NULL,
-    '{"caseType":"PAYMENT_ON_CANCELLED_POLICY","severity":"CRITICAL"}'::jsonb,
-    'Caso detectado automáticamente por motor de conciliación'
+    '{"caseType":"PAYMENT_ON_CANCELLED_POLICY","severity":"CRITICAL"}'::jsonb
 ),
 (
-    'commission_payment',
-    (SELECT id::varchar FROM commission_payment WHERE payment_reference = 'PAY-2026-03-NOHELIA'),
-    (SELECT id FROM parameter WHERE parameter_group = 'AUDIT_ACTION_TYPE' AND name = 'INSERT'),
     'settlement_engine',
+    'GENERATE_PAYMENT',
     CURRENT_TIMESTAMP,
+    'SUCCESS',
+    'Generación de liquidación mensual de prueba',
+    'GENERATED',
     NULL,
-    '{"paymentReference":"PAY-2026-03-NOHELIA","status":"GENERATED"}'::jsonb,
-    'Generación de liquidación mensual de prueba'
+    '{"paymentReference":"PAY-2026-03-NOHELIA","status":"GENERATED"}'::jsonb
+),
+(
+    'admin_user',
+    'UPDATE_POLICY_STATUS',
+    CURRENT_TIMESTAMP,
+    'SUCCESS',
+    'Actualización manual de estado de póliza',
+    'UPDATED',
+    '{"status":"ACTIVE"}'::jsonb,
+    '{"status":"CANCELLED"}'::jsonb
 );
