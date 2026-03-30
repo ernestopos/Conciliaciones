@@ -1,0 +1,9 @@
+<app-page-header title="Ejecuciones de procesamiento" subtitle="Entidad processing_execution (JPA)" />
+<app-search-filter-bar (filterChange)="applyFilter($event)" />
+@if (loading) {
+  <app-loading-spinner />
+} @else if (!filtered.length) {
+  <app-empty-state title="Sin ejecuciones" description="No hay ejecuciones para mostrar." />
+} @else {
+  <app-generic-table [data]="filtered" [displayedColumns]="columns" [headers]="headers" />
+}
