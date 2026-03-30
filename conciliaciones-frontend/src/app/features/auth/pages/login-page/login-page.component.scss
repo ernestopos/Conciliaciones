@@ -1,0 +1,5 @@
+.login-shell{min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
+.form-col{display:grid;place-items:center;padding:24px;background:#f8fafc}
+.image-col{background:linear-gradient(140deg,#1e3a8a,#0f172a);position:relative;color:#fff;padding:32px;display:flex;align-items:flex-end}
+.overlay{max-width:420px}
+@media (max-width: 960px){.login-shell{grid-template-columns:1fr}.image-col{min-height:220px;order:2}}
