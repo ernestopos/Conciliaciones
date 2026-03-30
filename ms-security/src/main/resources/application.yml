@@ -1,0 +1,59 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  main:
+    banner-mode: console
+  application:
+    name: ms-security
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5440/conciliaciones_db}
+    username: ${SPRING_DATASOURCE_USERNAME:conci001}
+    password: ${SPRING_DATASOURCE_PASSWORD:conci001}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SECURITY_JWT_ISSUER_URI:http://localhost:8081/realms/conciliaciones}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+security:
+  keycloak:
+    server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8081}
+    realm: ${KEYCLOAK_REALM:conciliaciones}
+    client-id: ${KEYCLOAK_CLIENT_ID:conciliaciones-orchestrator}
+    client-secret: ${KEYCLOAK_CLIENT_SECRET:orchestrator-secret-2026}
+    grant-type: ${KEYCLOAK_GRANT_TYPE:password}
+    connect-timeout-ms: ${KEYCLOAK_CONNECT_TIMEOUT_MS:3000}
+    read-timeout-ms: ${KEYCLOAK_READ_TIMEOUT_MS:5000}
+
+resilience4j:
+  retry:
+    instances:
+      keycloakClient:
+        maxAttempts: ${KEYCLOAK_RETRY_MAX_ATTEMPTS:3}
+        waitDuration: ${KEYCLOAK_RETRY_WAIT_DURATION:1s}
+  circuitbreaker:
+    instances:
+      keycloakClient:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: ${KEYCLOAK_CB_WINDOW_SIZE:10}
+        minimumNumberOfCalls: ${KEYCLOAK_CB_MIN_CALLS:5}
+        failureRateThreshold: ${KEYCLOAK_CB_FAILURE_RATE:50}
+        waitDurationInOpenState: ${KEYCLOAK_CB_WAIT_OPEN:10s}

@@ -1,0 +1,76 @@
+{
+  "realm": "conciliaciones",
+  "enabled": true,
+  "displayName": "Conciliaciones Realm",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "sslRequired": "external",
+
+  "roles": {
+    "realm": [
+      {
+        "name": "ADMIN"
+      },
+      {
+        "name": "USER"
+      }
+    ]
+  },
+
+  "clients": [
+    {
+      "clientId": "conciliaciones-orchestrator",
+      "name": "Conciliaciones Orchestrator",
+      "description": "Cliente del backend orquestador",
+      "rootUrl": "http://localhost:8080",
+      "adminUrl": "http://localhost:8080",
+      "baseUrl": "/",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "orchestrator-secret-2026",
+      "redirectUris": [
+        "http://localhost:8080/*",
+        "http://localhost:4200/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4200",
+        "http://localhost:8080"
+      ],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "post.logout.redirect.uris": "+"
+      }
+    }
+  ],
+
+  "users": [
+    {
+	  "username": "admin-app",
+	  "enabled": true,
+	  "emailVerified": true,
+	  "firstName": "Admin",
+	  "lastName": "App",
+	  "email": "admin-app@conciliaciones.local",
+	  "requiredActions": [],
+	  "credentials": [
+		{
+		  "type": "password",
+		  "value": "AdminApp123*",
+		  "temporary": false
+		}
+	  ],
+	  "realmRoles": [
+		"ADMIN"
+	  ]
+	}
+  ]
+}
