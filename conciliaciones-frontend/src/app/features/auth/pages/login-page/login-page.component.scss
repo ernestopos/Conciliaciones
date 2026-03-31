@@ -1,5 +1,149 @@
-.login-shell{min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
-.form-col{display:grid;place-items:center;padding:24px;background:#f8fafc}
-.image-col{background:linear-gradient(140deg,#1e3a8a,#0f172a);position:relative;color:#fff;padding:32px;display:flex;align-items:flex-end}
-.overlay{max-width:420px}
-@media (max-width: 960px){.login-shell{grid-template-columns:1fr}.image-col{min-height:220px;order:2}}
+:host {
+  display: block;
+}
+
+.login-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 42% 58%;
+  background: #f4f6fb;
+}
+
+/* COLUMNA IZQUIERDA */
+.form-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  background: #f4f6fb;
+}
+
+.form-wrapper {
+  width: 100%;
+  max-width: 460px;
+}
+
+/* COLUMNA DERECHA */
+.image-col {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding: 72px;
+
+  background-image: url('../../../../../assets/images/woman-accountant.png');
+  background-size: cover;
+  background-position: 70% center;
+  background-repeat: no-repeat;
+
+  border-top-left-radius: 180px;
+  border-bottom-left-radius: 180px;
+}
+
+/* capa azul encima de la imagen */
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(20, 44, 102, 0.78), rgba(9, 26, 74, 0.9)),
+    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.08), transparent 30%);
+}
+
+/* contenido */
+.overlay-content {
+  position: relative;
+  z-index: 1;
+  max-width: 520px;
+  margin-left: auto;
+  color: #fff;
+}
+
+.overlay-content h2 {
+  margin: 0 0 20px;
+  font-size: 52px;
+  line-height: 1.06;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.overlay-content p {
+  margin: 0 0 28px;
+  font-size: 20px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.features li {
+  position: relative;
+  padding-left: 28px;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.features li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+/* responsive */
+@media (max-width: 1100px) {
+  .login-shell {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .image-col {
+    padding: 48px;
+    border-top-left-radius: 120px;
+    border-bottom-left-radius: 120px;
+  }
+
+  .overlay-content h2 {
+    font-size: 40px;
+  }
+
+  .overlay-content p {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 900px) {
+  .login-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .form-col {
+    padding: 32px 20px;
+  }
+
+  .image-col {
+    min-height: 360px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    padding: 32px 24px;
+  }
+
+  .overlay-content {
+    margin-left: 0;
+    max-width: 100%;
+  }
+
+  .overlay-content h2 {
+    font-size: 32px;
+  }
+
+  .overlay-content p {
+    font-size: 16px;
+  }
+}

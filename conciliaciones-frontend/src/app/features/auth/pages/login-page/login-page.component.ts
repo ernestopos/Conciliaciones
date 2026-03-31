@@ -10,5 +10,5 @@ import { LoginFormComponent } from '../../components/login-form/login-form.compo
   styleUrl: './login-page.component.scss'
 })
 export class LoginPageComponent {
-  readonly sideImage = 'assets/login-accountant-placeholder.jpg';
+  readonly sideImage = 'assets/images/woman-accountant.png';
 }
