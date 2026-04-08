@@ -1,28 +1,6 @@
-version: '3.9'
+version: "3.9"
 
 services:
-  postgres:
-    image: postgres:16
-    container_name: bd_conciliaciones
-    restart: always
-    ports:
-      - "${POSTGRES_PORT}:5432"
-    environment:
-      POSTGRES_DB: "${POSTGRES_DB}"
-      POSTGRES_USER: "${POSTGRES_USER}"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
-    volumes:
-      - conciliaciones_postgres_data:/var/lib/postgresql/data
-      - ../docker/postgres/init:/docker-entrypoint-initdb.d
-    networks:
-      - conciliaciones_net
-      - conciliaciones-shared-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
   keycloak-db:
     image: postgres:16
     container_name: keycloak-db
@@ -37,7 +15,6 @@ services:
       - keycloak_postgres_data:/var/lib/postgresql/data
     networks:
       - conciliaciones-security-net
-      - conciliaciones-shared-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
       interval: 10s
@@ -57,15 +34,17 @@ services:
       KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
       KC_DB_USERNAME: keycloak
       KC_DB_PASSWORD: keycloak123
+
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin123
+
       KC_HTTP_PORT: 8080
       KC_HOSTNAME_STRICT: "false"
     ports:
       - "8081:8080"
       - "9000:9000"
     volumes:
-      - ../docker/keycloak/realm:/opt/keycloak/data/import
+      - ../docker/keycloak/realm/conciliaciones-realm.json:/opt/keycloak/data/import/conciliaciones-realm.json:ro
     depends_on:
       keycloak-db:
         condition: service_healthy
@@ -80,13 +59,11 @@ services:
       start_period: 40s
 
 volumes:
-  conciliaciones_postgres_data:
   keycloak_postgres_data:
 
 networks:
-  conciliaciones_net:
-    driver: bridge
   conciliaciones-security-net:
     driver: bridge
+
   conciliaciones-shared-net:
     driver: bridge
