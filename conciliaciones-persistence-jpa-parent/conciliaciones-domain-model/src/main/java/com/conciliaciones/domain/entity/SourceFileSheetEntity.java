@@ -10,7 +10,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SourceFileSheetEntity {
+public class SourceFileSheetEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -32,5 +32,4 @@ public class SourceFileSheetEntity {
 
     @Column(name="created_by",length=100)
     private String createdBy;
-
 }

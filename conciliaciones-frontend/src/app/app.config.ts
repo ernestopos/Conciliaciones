@@ -4,7 +4,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { routes } from './app.routes';
 import { AUTH_PROVIDER } from './auth/services/auth.service';
-import { DummyAuthProvider } from './auth/services/dummy-auth.provider';
+import { BackendAuthProvider } from './auth/providers/backend-auth.provider';
 import { authInterceptor } from './auth/interceptors/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
@@ -14,7 +14,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor])),
     {
       provide: AUTH_PROVIDER,
-      useClass: DummyAuthProvider
+      useClass: BackendAuthProvider
     }
   ]
 };

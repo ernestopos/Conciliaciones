@@ -1,23 +1,22 @@
 package com.conciliaciones.mssecurity.application.usecase;
 
 import com.conciliaciones.mssecurity.application.port.in.AuditUseCase;
-import com.conciliaciones.mssecurity.application.port.out.AuditPersistencePort;
 import com.conciliaciones.mssecurity.domain.model.AuditActionResult;
 import com.conciliaciones.domain.entity.AuditLogEntity;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.conciliaciones.persistence.repository.AuditLogRepository;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuditService implements AuditUseCase {
 
-    private final AuditPersistencePort auditPersistencePort;
     private final ObjectMapper objectMapper;
+    private final AuditLogRepository auditLogRepository;
 
     @Override
     public void register(String usuario,
@@ -28,30 +27,31 @@ public class AuditService implements AuditUseCase {
                          Object valorDespues,
                          String estado) {
         log.info("LOG INICIO X = register");
+
         AuditLogEntity auditLogEntity = AuditLogEntity.builder()
-                                .entityName("SECURITY")
+                .entityName("SECURITY")
                 .entityId(usuario == null ? "NA" : usuario)
-                                .actionId(1L)
-                                .eventTimestamp(java.time.LocalDateTime.now())
-                                .username(usuario)
-                                .details(detalle + " | resultado=" + resultado.name() + " | estado=" + estado)
-                                .oldValues(serializeSafe(valorAntes))
-                .newValues(serializeSafe(valorDespues))
+                .actionId(1L)
+                .eventTimestamp(java.time.LocalDateTime.now())
+                .username(usuario)
+                .details(detalle + " | resultado=" + resultado.name() + " | estado=" + estado)
+                .oldValues(toJsonNodeSafe(valorAntes))
+                .newValues(toJsonNodeSafe(valorDespues))
                 .build();
 
-        auditPersistencePort.save(auditLogEntity);
+        auditLogRepository.save(auditLogEntity);
         log.info("LOG FIN X = register");
     }
 
-    private String serializeSafe(Object object) {
+    private JsonNode toJsonNodeSafe(Object object) {
         if (object == null) {
             return null;
         }
         try {
-            return objectMapper.writeValueAsString(object);
-        } catch (JsonProcessingException ex) {
+            return objectMapper.valueToTree(object);
+        } catch (Exception ex) {
             log.error("Error serializando objeto de auditoría. objectType={}", object.getClass().getName(), ex);
-            return "{\"serializationError\":true}";
+            return objectMapper.createObjectNode().put("serializationError", true);
         }
     }
 }

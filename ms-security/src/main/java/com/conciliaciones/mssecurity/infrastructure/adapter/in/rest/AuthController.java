@@ -12,6 +12,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,10 +22,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 @Tag(name = "Auth", description = "Endpoints de autenticación y autorización")
 public class AuthController {
@@ -31,37 +34,51 @@ public class AuthController {
     private final AuthUseCase authUseCase;
 
     @PostMapping("/login")
-    @Operation(summary = "Autenticar usuario contra Keycloak")
+    @Operation(
+            summary = "Autenticar usuario contra Keycloak",
+            description = "Recibe credenciales de usuario y retorna tokens de autenticación"
+    )
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        log.info("LOG INICIO X = login");
+        log.info("Inicio autenticación de usuario");
+
         LoginResult result = authUseCase.login(request.username(), request.password());
-        ResponseEntity<LoginResponse> response = ResponseEntity.ok(new LoginResponse(
+
+        LoginResponse response = new LoginResponse(
                 result.accessToken(),
                 result.refreshToken(),
                 result.tokenType(),
                 result.expiresIn(),
-                result.roles()));
-        log.info("LOG FIN X = login");
-        return response;
+                result.roles()
+        );
+
+        log.info("Autenticación exitosa de usuario");
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/validate")
     @Operation(summary = "Validar token de acceso")
-    public ResponseEntity<ValidateResponse> validate(@RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<Map<String, Object>> validate(@AuthenticationPrincipal Jwt jwt) {
         log.info("LOG INICIO X = validate");
-        UserValidationResult result = authUseCase.validate(authorizationHeader);
-        ResponseEntity<ValidateResponse> response = ResponseEntity.ok(
-                new ValidateResponse(result.username(), result.active(), result.message()));
+        ResponseEntity<Map<String, Object>> response = ResponseEntity.ok(Map.of(
+                "username", jwt.getClaimAsString("preferred_username"),
+                "active", true,
+                "message", "Token válido"
+        ));
         log.info("LOG FIN X = validate");
         return response;
     }
 
     @GetMapping("/roles")
-    @Operation(summary = "Consultar roles del token")
+    @Operation(
+            summary = "Consultar roles del token",
+            description = "Obtiene la lista de roles asociados al token JWT recibido"
+    )
     public ResponseEntity<List<String>> roles(@RequestHeader("Authorization") String authorizationHeader) {
-        log.info("LOG INICIO X = roles");
-        ResponseEntity<List<String>> response = ResponseEntity.ok(authUseCase.getRoles(authorizationHeader));
-        log.info("LOG FIN X = roles");
-        return response;
+        log.info("Inicio consulta de roles");
+
+        List<String> roles = authUseCase.getRoles(authorizationHeader);
+
+        log.info("Consulta de roles finalizada");
+        return ResponseEntity.ok(roles);
     }
 }

@@ -21,7 +21,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
-                                "/auth/login"
+                                "/api/v1/auth/login"
                         ).permitAll()
                         .requestMatchers("/auth/roles").hasAnyRole("ADMIN", "USER")
                         .requestMatchers("/auth/validate").authenticated()
