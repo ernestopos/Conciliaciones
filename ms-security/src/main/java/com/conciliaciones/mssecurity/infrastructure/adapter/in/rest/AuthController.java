@@ -6,6 +6,7 @@ import com.conciliaciones.mssecurity.domain.model.UserValidationResult;
 import com.conciliaciones.mssecurity.infrastructure.adapter.in.rest.dto.LoginRequest;
 import com.conciliaciones.mssecurity.infrastructure.adapter.in.rest.dto.LoginResponse;
 import com.conciliaciones.mssecurity.infrastructure.adapter.in.rest.dto.ValidateResponse;
+import com.conciliaciones.mssecurity.infrastructure.exception.AuthenticationException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -59,13 +60,26 @@ public class AuthController {
     @Operation(summary = "Validar token de acceso")
     public ResponseEntity<Map<String, Object>> validate(@AuthenticationPrincipal Jwt jwt) {
         log.info("LOG INICIO X = validate");
-        ResponseEntity<Map<String, Object>> response = ResponseEntity.ok(Map.of(
-                "username", jwt.getClaimAsString("preferred_username"),
-                "active", true,
-                "message", "Token válido"
-        ));
+
+        if (jwt == null) {
+            throw new AuthenticationException("No se encontró un JWT válido en la petición");
+        }
+
+        String username = jwt.getClaimAsString("preferred_username");
+        if (username == null || username.isBlank()) {
+            username = jwt.getSubject();
+        }
+        if (username == null || username.isBlank()) {
+            username = "N/A";
+        }
+
+        Map<String, Object> body = new java.util.HashMap<>();
+        body.put("username", username);
+        body.put("active", true);
+        body.put("message", "Token válido");
+
         log.info("LOG FIN X = validate");
-        return response;
+        return ResponseEntity.ok(body);
     }
 
     @GetMapping("/roles")

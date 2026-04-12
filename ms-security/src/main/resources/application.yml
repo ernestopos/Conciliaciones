@@ -41,7 +41,7 @@ security:
   keycloak:
     server-url: ${KEYCLOAK_SERVER_URL:http://localhost:8081}
     realm: ${KEYCLOAK_REALM:conciliaciones}
-    client-id: ${KEYCLOAK_CLIENT_ID:conciliaciones-security}
-    client-secret: ${KEYCLOAK_CLIENT_SECRET:security-secret-2026}
+    client-id: ${KEYCLOAK_CLIENT_ID:admin-cli}
+    client-secret:
     admin-username: ${KEYCLOAK_ADMIN_USERNAME:admin}
     admin-password: ${KEYCLOAK_ADMIN_PASSWORD:admin123}
