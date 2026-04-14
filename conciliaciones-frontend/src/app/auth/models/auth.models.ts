@@ -23,6 +23,14 @@ export interface LoginCredentials {
 
 export interface LoginResult {
   success: boolean;
+  token?: string;
   user?: AuthUser;
+  expiresIn?: number;
   errorMessage?: string;
+}
+
+export interface AuthSession {
+  token: string;
+  user: AuthUser;
+  expiresIn?: number;
 }

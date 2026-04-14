@@ -68,7 +68,7 @@ export class LoginFormComponent {
       },
       error: () => {
         this.loading = false;
-        this.snackBar.open('Error al intentarse loguear a la aplicación', 'Cerrar', { duration: 3200 });
+        this.snackBar.open('Error temporal de autenticación', 'Cerrar', { duration: 3200 });
       }
     });
   }

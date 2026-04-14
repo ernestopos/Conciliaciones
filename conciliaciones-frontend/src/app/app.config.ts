@@ -4,8 +4,8 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { routes } from './app.routes';
 import { AUTH_PROVIDER } from './auth/services/auth.service';
-import { BackendAuthProvider } from './auth/providers/backend-auth.provider';
 import { authInterceptor } from './auth/interceptors/auth.interceptor';
+import { BackendAuthProvider } from './auth/services/backend-auth.provider';
 
 export const appConfig: ApplicationConfig = {
   providers: [

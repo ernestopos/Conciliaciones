@@ -33,7 +33,7 @@ interface JwtPayload {
 
 @Injectable()
 export class BackendAuthProvider implements AuthProviderPort {
-  private readonly loginUrl = `${environment.securityApiBaseUrl}/api/v1/auth/login`;
+  private readonly loginUrl = `${environment.api.auth}/api/v1/auth/login`;
 
   constructor(private readonly http: HttpClient) {}
 
