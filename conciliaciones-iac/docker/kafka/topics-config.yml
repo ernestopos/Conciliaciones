@@ -1,0 +1,12 @@
+topics:
+  - name: conciliaciones.logs-app
+    partitions: 1
+    replication: 1
+
+  - name: conciliaciones.logs-error
+    partitions: 1
+    replication: 1
+
+  - name: conciliaciones.logs-audit
+    partitions: 1
+    replication: 1
