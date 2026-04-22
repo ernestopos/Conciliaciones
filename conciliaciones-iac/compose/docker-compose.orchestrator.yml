@@ -1,3 +1,7 @@
+include:
+  - docker-compose.localstack.yml
+  - docker-compose.kafka.yml
+
 version: '3.9'
 
 services:
@@ -89,4 +93,6 @@ networks:
   conciliaciones-security-net:
     driver: bridge
   conciliaciones-shared-net:
+    driver: bridge
+  conciliaciones-messaging-net:
     driver: bridge
