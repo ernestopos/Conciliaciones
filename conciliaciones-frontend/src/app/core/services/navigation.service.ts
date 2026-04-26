@@ -33,6 +33,13 @@ export class NavigationService {
       ]
     },
     {
+      label: 'Upload Files',
+      icon: 'upload_file',
+      children: [
+        { label: 'Upload sources file', icon: 'description', route: '/upload-files/upload-sources-file' }
+      ]
+    },
+    {
       label: 'Pagos / Liquidaciones',
       icon: 'payments',
       route: '/pagos/liquidaciones'
