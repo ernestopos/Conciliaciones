@@ -5,10 +5,14 @@ import com.conciliaciones.domain.file.FileType;
 import com.conciliaciones.domain.file.SourceFile;
 import com.conciliaciones.domain.processing.ProcessingStatus;
 import com.conciliaciones.msfilemanagement.application.port.out.SourceFilePersistencePort;
+import com.conciliaciones.msfilemanagement.infrastructure.exception.BusinessException;
 import com.conciliaciones.persistence.jpa.entity.SourceFileEntity;
+import com.conciliaciones.persistence.jpa.entity.SourceFileTraceabilityEntity;
 import com.conciliaciones.persistence.repository.SourceFileRepository;
+import com.conciliaciones.persistence.repository.SourceFileTraceabilityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -23,18 +27,20 @@ public class SharedSourceFilePersistenceAdapter implements SourceFilePersistence
     private static final String DEFAULT_USER = "SYSTEM";
 
     private final SourceFileRepository sourceFileRepository;
+    private final SourceFileTraceabilityRepository sourceFileTraceabilityRepository;
 
     @Override
+    @Transactional
     public SourceFile save(SourceFile sourceFile) {
         SourceFileEntity entityToSave = toEntity(sourceFile);
         SourceFileEntity savedEntity = sourceFileRepository.save(entityToSave);
+        saveTraceability(savedEntity, toProcessingStatus(savedEntity.getProcessingStatusId()), null, resolveCreatedBy(sourceFile));
         return toDomain(savedEntity);
     }
 
     @Override
     public Optional<SourceFile> findById(Long id) {
-        return sourceFileRepository.findById(id)
-                .map(this::toDomain);
+        return sourceFileRepository.findById(id).map(this::toDomain);
     }
 
     @Override
@@ -46,10 +52,36 @@ public class SharedSourceFilePersistenceAdapter implements SourceFilePersistence
                 .map(this::toDomain);
     }
 
+    @Override
+    @Transactional
+    public SourceFile updateStatus(Long sourceFileId, ProcessingStatus status, String errorMessage, String updatedBy) {
+        SourceFileEntity entity = sourceFileRepository.findById(sourceFileId)
+                .orElseThrow(() -> new BusinessException("No existe archivo fuente con id: " + sourceFileId));
+
+        entity.setProcessingStatusId(status.getId());
+        entity.setErrorMessage(errorMessage);
+
+        SourceFileEntity savedEntity = sourceFileRepository.save(entity);
+        saveTraceability(savedEntity, status, errorMessage, updatedBy);
+        return toDomain(savedEntity);
+    }
+
+    private void saveTraceability(SourceFileEntity sourceFile, ProcessingStatus status, String errorMessage, String createdBy) {
+        SourceFileTraceabilityEntity traceability = new SourceFileTraceabilityEntity();
+        traceability.setSourceFile(sourceFile);
+        traceability.setProcessingStatusId(status.getId());
+        traceability.setStatusName(status.name());
+        traceability.setDescription(status.getDescription());
+        traceability.setErrorMessage(errorMessage);
+        traceability.setCreatedAt(LocalDateTime.now());
+        traceability.setCreatedBy(createdBy == null || createdBy.isBlank() ? DEFAULT_USER : createdBy);
+        sourceFileTraceabilityRepository.save(traceability);
+    }
+
     private SourceFileEntity toEntity(SourceFile sourceFile) {
         SourceFileEntity entity = new SourceFileEntity();
         entity.setId(sourceFile.getId());
-        entity.setCarrierId(sourceFile.getClientId());
+        entity.setCarrierId(sourceFile.getClientId() == null ? 1L : sourceFile.getClientId());
         entity.setOriginalFileName(sourceFile.getOriginalFileName());
         entity.setStoredFileName(extractFileName(sourceFile.getStoragePath(), sourceFile.getOriginalFileName()));
         entity.setFileExtension(extractExtension(sourceFile.getOriginalFileName()));
@@ -106,10 +138,7 @@ public class SharedSourceFilePersistenceAdapter implements SourceFilePersistence
         String normalized = storagePath.replace("\\", "/");
         String withoutScheme = normalized.startsWith("s3://") ? normalized.substring(5) : normalized;
         int idx = withoutScheme.indexOf('/');
-        if (idx < 0) {
-            return null;
-        }
-        return withoutScheme.substring(0, idx);
+        return idx < 0 ? null : withoutScheme.substring(0, idx);
     }
 
     private String extractKey(String storagePath) {
@@ -147,17 +176,11 @@ public class SharedSourceFilePersistenceAdapter implements SourceFilePersistence
     }
 
     private Long toProcessingStatusId(ProcessingStatus status) {
-        if (status == null) {
-            return 1L;
-        }
-        return (long) (status.ordinal() + 1);
+        return status == null ? ProcessingStatus.PRESIGNED.getId() : status.getId();
     }
 
     private ProcessingStatus toProcessingStatus(Long statusId) {
-        if (statusId == null || statusId < 1 || statusId > ProcessingStatus.values().length) {
-            return ProcessingStatus.PENDING;
-        }
-        return ProcessingStatus.values()[statusId.intValue() - 1];
+        return ProcessingStatus.fromId(statusId);
     }
 
     private FileType toFileType(String extension) {
@@ -172,9 +195,6 @@ public class SharedSourceFilePersistenceAdapter implements SourceFilePersistence
     }
 
     private OffsetDateTime toOffsetDateTime(LocalDateTime value) {
-        if (value == null) {
-            return null;
-        }
-        return value.atOffset(ZoneOffset.UTC);
+        return value == null ? null : value.atOffset(ZoneOffset.UTC);
     }
 }

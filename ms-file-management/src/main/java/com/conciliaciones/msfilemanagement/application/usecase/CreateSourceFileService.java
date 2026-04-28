@@ -34,7 +34,7 @@ public class CreateSourceFileService implements CreateSourceFileUseCase {
                 .fileSize(command.fileSize())
                 .fileType(command.fileType())
                 .checksum(command.checksum())
-                .processingStatus(ProcessingStatus.PENDING)
+                .processingStatus(ProcessingStatus.PRESIGNED)
                 .auditInfo(AuditInfo.builder()
                         .createdBy(command.createdBy() == null || command.createdBy().isBlank() ? "SYSTEM" : command.createdBy())
                         .createdAt(OffsetDateTime.now())

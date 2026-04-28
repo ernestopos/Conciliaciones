@@ -1,10 +1,15 @@
 package com.conciliaciones.msfilemanagement.infrastructure.adapter.in.rest.storage;
 
+import com.conciliaciones.msfilemanagement.application.port.in.storage.ConfirmUploadCallbackCommand;
+import com.conciliaciones.msfilemanagement.application.port.in.storage.ConfirmUploadCallbackResult;
+import com.conciliaciones.msfilemanagement.application.port.in.storage.ConfirmUploadCallbackUseCase;
 import com.conciliaciones.msfilemanagement.application.port.in.storage.CreateBucketUseCase;
 import com.conciliaciones.msfilemanagement.application.port.in.storage.GeneratePresignedUploadUrlCommand;
 import com.conciliaciones.msfilemanagement.application.port.in.storage.GeneratePresignedUploadUrlResult;
 import com.conciliaciones.msfilemanagement.application.port.in.storage.GeneratePresignedUploadUrlUseCase;
 import com.conciliaciones.msfilemanagement.application.port.in.storage.ListBucketsUseCase;
+import com.conciliaciones.msfilemanagement.infrastructure.adapter.in.rest.storage.dto.ConfirmUploadCallbackRequest;
+import com.conciliaciones.msfilemanagement.infrastructure.adapter.in.rest.storage.dto.ConfirmUploadCallbackResponse;
 import com.conciliaciones.msfilemanagement.infrastructure.adapter.in.rest.storage.dto.CreateBucketRequest;
 import com.conciliaciones.msfilemanagement.infrastructure.adapter.in.rest.storage.dto.CreateBucketResponse;
 import com.conciliaciones.msfilemanagement.infrastructure.adapter.in.rest.storage.dto.GeneratePresignedUploadUrlRequest;
@@ -31,6 +36,7 @@ public class StorageController {
     private final CreateBucketUseCase createBucketUseCase;
     private final ListBucketsUseCase listBucketsUseCase;
     private final GeneratePresignedUploadUrlUseCase generatePresignedUploadUrlUseCase;
+    private final ConfirmUploadCallbackUseCase confirmUploadCallbackUseCase;
 
     @PostMapping("/buckets")
     @Operation(summary = "Crear bucket en S3")
@@ -62,10 +68,37 @@ public class StorageController {
         );
 
         return ResponseEntity.ok(new GeneratePresignedUploadUrlResponse(
+                result.sourceFileId(),
                 result.bucketName(),
                 result.objectKey(),
                 result.presignedUrl(),
                 result.expiresInMinutes()
+        ));
+    }
+
+    @PostMapping("/upload-callback")
+    @Operation(summary = "Confirmar resultado del cargue del archivo a S3")
+    public ResponseEntity<ConfirmUploadCallbackResponse> confirmUploadCallback(
+            @Valid @RequestBody ConfirmUploadCallbackRequest request) {
+
+        ConfirmUploadCallbackResult result = confirmUploadCallbackUseCase.confirm(
+                new ConfirmUploadCallbackCommand(
+                        request.sourceFileId(),
+                        request.bucketName(),
+                        request.objectKey(),
+                        request.fileName(),
+                        request.contentType(),
+                        request.fileSizeBytes(),
+                        request.success(),
+                        request.errorMessage()
+                )
+        );
+
+        return ResponseEntity.ok(new ConfirmUploadCallbackResponse(
+                result.sourceFileId(),
+                result.processingStatusId(),
+                result.processingStatus(),
+                "Estado del archivo actualizado correctamente"
         ));
     }
 }

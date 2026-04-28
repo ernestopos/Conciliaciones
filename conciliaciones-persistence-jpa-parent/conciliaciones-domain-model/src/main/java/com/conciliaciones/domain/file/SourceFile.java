@@ -25,4 +25,6 @@ public class SourceFile extends BaseDomainEntity<Long> {
     private String checksum;
     private ProcessingStatus processingStatus;
     private AuditInfo auditInfo;
+    private String bucketName;
+    private String objectKey;
 }

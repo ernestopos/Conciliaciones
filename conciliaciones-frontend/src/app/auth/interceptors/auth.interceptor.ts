@@ -4,9 +4,12 @@ import { getStoredAccessToken } from '../services/auth-storage';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = getStoredAccessToken();
-  const isCoreRequest = req.url.startsWith(environment.api.core);
 
-  if (!token || !isCoreRequest) {
+  const isProtectedBackendRequest =
+    req.url.startsWith(environment.api.core) ||
+    req.url.startsWith(environment.api.fileManagement);
+
+  if (!token || !isProtectedBackendRequest) {
     return next(req);
   }
 

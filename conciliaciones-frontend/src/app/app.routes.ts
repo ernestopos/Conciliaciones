@@ -8,6 +8,7 @@ import { ProcessingExecutionsPageComponent } from './features/conciliacion/proce
 import { DomainPlaceholderComponent } from './features/placeholders/domain-placeholder.component';
 import { CrudEntityPageComponent } from './shared/components/crud-entity-page/crud-entity-page.component';
 import { CrudRouteConfig } from './core/models/crud.models';
+import { UploadSourcesFilePageComponent } from './features/upload-files/upload-sources-file/upload-sources-file-page.component';
 
 const agencyCrudConfig: CrudRouteConfig = {
   resourceKey: 'agencies',
@@ -145,6 +146,7 @@ export const routes: Routes = [
       { path: 'pagos/liquidaciones', component: DomainPlaceholderComponent, data: { title: 'Pagos / Liquidaciones' } },
       { path: 'auditoria/registros', component: DomainPlaceholderComponent, data: { title: 'Auditoría' } },
       { path: 'reportes', component: DomainPlaceholderComponent, data: { title: 'Reportes' } },
+      { path: 'upload-files/upload-sources-file',  component: UploadSourcesFilePageComponent },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' }
     ]
   },

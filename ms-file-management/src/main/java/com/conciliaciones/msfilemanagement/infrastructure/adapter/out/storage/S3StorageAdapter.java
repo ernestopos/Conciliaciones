@@ -13,13 +13,16 @@ import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.BucketAlreadyExistsException;
 import software.amazon.awssdk.services.s3.model.BucketAlreadyOwnedByYouException;
+import software.amazon.awssdk.services.s3.model.CORSConfiguration;
+import software.amazon.awssdk.services.s3.model.CORSRule;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.HeadBucketResponse;
 import software.amazon.awssdk.services.s3.model.ListBucketsResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutBucketCorsRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
@@ -30,6 +33,8 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 @ConditionalOnProperty(prefix = "app.aws.s3", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class S3StorageAdapter implements ObjectStoragePort {
 
+    private static final List<String> ALLOWED_ORIGINS = List.of("http://localhost:4200");
+
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
     private final AwsS3Properties properties;
@@ -39,9 +44,22 @@ public class S3StorageAdapter implements ObjectStoragePort {
         String resolvedBucket = resolveBucket(bucketName);
         try {
             log.info("LOG INICIO X = createBucket {}", resolvedBucket);
-            s3Client.createBucket(CreateBucketRequest.builder().bucket(resolvedBucket).build());
+
+            if (!bucketExists(resolvedBucket)) {
+                s3Client.createBucket(CreateBucketRequest.builder()
+                        .bucket(resolvedBucket)
+                        .build());
+                log.info("Bucket creado correctamente: {}", resolvedBucket);
+            } else {
+                log.info("Bucket ya existe: {}", resolvedBucket);
+            }
+
+            applyCors(resolvedBucket);
+
+            log.info("LOG FIN X = createBucket {}", resolvedBucket);
         } catch (BucketAlreadyOwnedByYouException | BucketAlreadyExistsException ex) {
             log.info("Bucket ya existe: {}", resolvedBucket);
+            applyCors(resolvedBucket);
         } catch (Exception ex) {
             throw new ObjectStorageException("Error creando bucket " + resolvedBucket, ex);
         }
@@ -62,7 +80,11 @@ public class S3StorageAdapter implements ObjectStoragePort {
     public boolean bucketExists(String bucketName) {
         String resolvedBucket = resolveBucket(bucketName);
         try {
-            HeadBucketResponse ignored = s3Client.headBucket(HeadBucketRequest.builder().bucket(resolvedBucket).build());
+            HeadBucketResponse ignored = s3Client.headBucket(
+                    HeadBucketRequest.builder()
+                            .bucket(resolvedBucket)
+                            .build()
+            );
             return true;
         } catch (NoSuchBucketException ex) {
             return false;
@@ -81,7 +103,10 @@ public class S3StorageAdapter implements ObjectStoragePort {
             log.info("LOG INICIO X = generatePresignedUploadUrl bucket={} key={}", resolvedBucket, objectKey);
             PutObjectPresignRequest request = PutObjectPresignRequest.builder()
                     .signatureDuration(Duration.ofMinutes(properties.presignedUrlDurationMinutes()))
-                    .putObjectRequest(put -> put.bucket(resolvedBucket).key(objectKey).contentType(contentType))
+                    .putObjectRequest(put -> put
+                            .bucket(resolvedBucket)
+                            .key(objectKey)
+                            .contentType(contentType))
                     .build();
             return s3Presigner.presignPutObject(request).url().toExternalForm();
         } catch (Exception ex) {
@@ -123,6 +148,34 @@ public class S3StorageAdapter implements ObjectStoragePort {
                     .build());
         } catch (Exception ex) {
             throw new ObjectStorageException("Error eliminando objeto " + objectKey, ex);
+        }
+    }
+
+    private void applyCors(String bucketName) {
+        try {
+            log.info("LOG INICIO X = applyCors {}", bucketName);
+
+            CORSRule corsRule = CORSRule.builder()
+                    .allowedOrigins(ALLOWED_ORIGINS)
+                    .allowedMethods("PUT", "GET", "HEAD", "POST", "DELETE")
+                    .allowedHeaders("*")
+                    .exposeHeaders("ETag")
+                    .maxAgeSeconds(3000)
+                    .build();
+
+            CORSConfiguration corsConfiguration = CORSConfiguration.builder()
+                    .corsRules(corsRule)
+                    .build();
+
+            s3Client.putBucketCors(PutBucketCorsRequest.builder()
+                    .bucket(bucketName)
+                    .corsConfiguration(corsConfiguration)
+                    .build());
+
+            log.info("CORS aplicado correctamente al bucket: {}", bucketName);
+            log.info("LOG FIN X = applyCors {}", bucketName);
+        } catch (Exception ex) {
+            throw new ObjectStorageException("Error aplicando CORS al bucket " + bucketName, ex);
         }
     }
 
