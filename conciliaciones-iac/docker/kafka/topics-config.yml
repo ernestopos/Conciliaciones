@@ -10,3 +10,7 @@ topics:
   - name: conciliaciones.logs-audit
     partitions: 1
     replication: 1
+  
+  - name: conciliaciones.file-upload-confirmed
+    partitions: 1
+    replication: 1

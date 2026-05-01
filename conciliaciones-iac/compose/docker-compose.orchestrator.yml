@@ -1,8 +1,8 @@
 include:
   - docker-compose.localstack.yml
   - docker-compose.kafka.yml
-
-version: '3.9'
+  - docker-compose.microservices.yml
+  - docker-compose.frontend.yml
 
 services:
   postgres:
