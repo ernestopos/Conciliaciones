@@ -10,8 +10,7 @@ import com.conciliaciones.msfilemanagement.infrastructure.exception.BusinessExce
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -35,12 +34,12 @@ public class CreateSourceFileService implements CreateSourceFileUseCase {
                 .fileSize(command.fileSize())
                 .fileType(command.fileType())
                 .checksum(command.checksum())
-                .processingStatus(ProcessingStatus.PENDING)
+                .processingStatus(ProcessingStatus.PRESIGNED)
                 .auditInfo(AuditInfo.builder()
                         .createdBy(command.createdBy() == null || command.createdBy().isBlank() ? "SYSTEM" : command.createdBy())
-                        .createdAt(LocalDateTime.now())
-                        .lastModifiedBy(command.createdBy() == null || command.createdBy().isBlank() ? "SYSTEM" : command.createdBy())
-                        .lastModifiedAt(LocalDateTime.now())
+                        .createdAt(OffsetDateTime.now())
+                        .modifiedBy(command.createdBy() == null || command.createdBy().isBlank() ? "SYSTEM" : command.createdBy())
+                        .modifiedAt(OffsetDateTime.now())
                         .build())
                 .build();
 

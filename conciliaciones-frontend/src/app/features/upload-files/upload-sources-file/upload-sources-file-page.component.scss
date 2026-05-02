@@ -1,0 +1,121 @@
+.upload-page {
+  display: grid;
+  gap: 1rem;
+}
+
+mat-card-content {
+  display: grid;
+  gap: 1rem;
+  padding-top: 1rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.file-picker {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.selected-file,
+.helper-text {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.selected-file span,
+.helper-text {
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 0.9rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.progress-wrapper {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progress-header div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.progress-header small {
+  color: rgba(0, 0, 0, 0.58);
+  font-size: 0.8rem;
+}
+
+.custom-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e8eaed;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.progress-fill-active {
+  position: relative;
+}
+
+.progress-fill-active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
+  animation: progress-shimmer 1.2s infinite;
+}
+
+.message {
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+}
+
+.message p {
+  margin: 0.2rem 0;
+}
+
+.message.success {
+  background: #eef7ee;
+  color: #1b5e20;
+}
+
+.message.error {
+  background: #fdeeee;
+  color: #b71c1c;
+}
+
+@keyframes progress-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}

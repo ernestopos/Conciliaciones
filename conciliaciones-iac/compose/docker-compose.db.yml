@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   postgres:
     image: postgres:16
@@ -12,7 +10,7 @@ services:
       POSTGRES_USER: "${POSTGRES_USER}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
     volumes:
-      - conciliaciones_postgres_data:/var/lib/postgresql
+      - conciliaciones_postgres_data:/var/lib/postgresql/data
       - ../docker/postgres/init:/docker-entrypoint-initdb.d
     networks:
       - conciliaciones_net

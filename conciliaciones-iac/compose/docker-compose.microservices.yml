@@ -1,0 +1,125 @@
+services:
+
+  ms-security:
+    build:
+      context: ../../ms-security
+      dockerfile: Dockerfile
+    image: conciliaciones/ms-security:local
+    container_name: ms-security
+    restart: unless-stopped
+    ports:
+      - "9081:9081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SECURITY_JWT_ISSUER_URI: http://keycloak:8080/realms/conciliaciones
+      KEYCLOAK_SERVER_URL: http://keycloak:8080
+      KEYCLOAK_REALM: conciliaciones
+      KEYCLOAK_CLIENT_ID: admin-cli
+      KEYCLOAK_ADMIN_USERNAME: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    networks:
+      - conciliaciones_net
+      - conciliaciones-security-net
+      - conciliaciones-shared-net
+
+  ms-reconciliation-core:
+    build:
+      context: ../../ms-reconciliation-core
+      dockerfile: Dockerfile
+    image: conciliaciones/ms-reconciliation-core:local
+    container_name: ms-reconciliation-core
+    restart: unless-stopped
+    ports:
+      - "9091:9091"
+    environment:
+      SERVER_PORT: 9091
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_ISSUER_URI: http://keycloak:8080/realms/conciliaciones
+      APP_CORS_ALLOWED_ORIGINS: http://localhost:4200
+      APP_AWS_S3_ENABLED: "true"
+      APP_AWS_S3_LOCALSTACK_ENABLED: "true"
+      APP_AWS_S3_REGION: us-east-1
+      APP_AWS_S3_ENDPOINT: http://localstack:4566
+      APP_AWS_S3_ACCESS_KEY: test
+      APP_AWS_S3_SECRET_KEY: test
+      APP_AWS_S3_PATH_STYLE: "true"
+      APP_AWS_S3_PRESIGNED_DURATION_MINUTES: 15
+      APP_AWS_S3_DEFAULT_BUCKET: conciliaciones-reconciliation-dev
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+    networks:
+      - conciliaciones_net
+      - conciliaciones-security-net
+      - conciliaciones-shared-net
+
+  ms-file-management:
+    build:
+      context: ../..
+      dockerfile: ms-file-management/Dockerfile
+    image: conciliaciones/ms-file-management:local
+    container_name: ms-file-management
+    restart: unless-stopped
+    ports:
+      - "9093:9092"
+    environment:
+      SERVER_PORT: 9092
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_ISSUER_URI: http://keycloak:8080/realms/conciliaciones
+      APP_CORS_ALLOWED_ORIGINS: http://localhost:4200
+      APP_AWS_S3_ENABLED: "true"
+      APP_AWS_S3_LOCALSTACK_ENABLED: "true"
+      APP_AWS_S3_REGION: us-east-1
+      APP_AWS_S3_ENDPOINT: http://host.docker.internal:4566
+      APP_AWS_S3_ACCESS_KEY: test
+      APP_AWS_S3_SECRET_KEY: test
+      APP_AWS_S3_PATH_STYLE: "true"
+      APP_AWS_S3_PATH_STYLE_ACCESS_ENABLED: "true"
+      APP_AWS_S3_PRESIGNED_DURATION_MINUTES: 15
+      APP_AWS_S3_DEFAULT_BUCKET: conciliaciones-file-management-dev
+      APP_AWS_S3_AUTO_CREATE_DEFAULT_BUCKET: "true"
+      APP_AWS_S3_BUCKET_PREFIX: fm
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      localstack:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+    networks:
+      - conciliaciones_net
+      - conciliaciones-messaging-net
+      - conciliaciones-shared-net
+      - conciliaciones-security-net
+
+networks:
+  conciliaciones_net:
+    external: false
+  conciliaciones-security-net:
+    external: false
+  conciliaciones-shared-net:
+    external: false
+  conciliaciones-messaging-net:
+    external: false

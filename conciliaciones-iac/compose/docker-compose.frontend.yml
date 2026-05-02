@@ -1,0 +1,24 @@
+services:
+  conciliaciones-frontend:
+    build:
+      context: ../../conciliaciones-frontend
+      dockerfile: Dockerfile
+      args:
+        FRONTEND_API_AUTH_URL: ${FRONTEND_API_AUTH_URL:-http://localhost:9081/api/v1}
+        FRONTEND_API_CORE_URL: ${FRONTEND_API_CORE_URL:-http://localhost:9091/api/v1}
+        FRONTEND_API_FILE_MANAGEMENT_URL: ${FRONTEND_API_FILE_MANAGEMENT_URL:-http://localhost:9092/api/v1}
+    image: conciliaciones/conciliaciones-frontend:local
+    container_name: conciliaciones-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+    depends_on:
+      - ms-security
+      - ms-reconciliation-core
+      - ms-file-management
+    networks:
+      - conciliaciones-shared-net
+
+networks:
+  conciliaciones-shared-net:
+    external: false

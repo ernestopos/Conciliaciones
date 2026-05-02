@@ -1,4 +1,8 @@
-version: '3.9'
+include:
+  - docker-compose.localstack.yml
+  - docker-compose.kafka.yml
+  - docker-compose.microservices.yml
+  - docker-compose.frontend.yml
 
 services:
   postgres:
@@ -89,4 +93,6 @@ networks:
   conciliaciones-security-net:
     driver: bridge
   conciliaciones-shared-net:
+    driver: bridge
+  conciliaciones-messaging-net:
     driver: bridge

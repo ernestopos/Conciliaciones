@@ -1,0 +1,10 @@
+package com.conciliaciones.msfilemanagement.infrastructure.adapter.in.rest.storage.dto;
+
+public record GeneratePresignedUploadUrlResponse(
+        Long sourceFileId,
+        String bucketName,
+        String objectKey,
+        String presignedUrl,
+        long expiresInMinutes
+) {
+}

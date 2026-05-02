@@ -1,0 +1,33 @@
+server:
+  port: ${SERVER_PORT:8084}
+
+spring:
+  application:
+    name: ms-management-task
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5440/conciliaciones_db}
+    username: ${DB_USERNAME:conci001}
+    password: ${DB_PASSWORD:conci001}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:192.168.1.20:29092}
+    consumer:
+      group-id: ${KAFKA_GROUP_ID:ms-management-task}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: '*'
+        spring.json.use.type.headers: false
+
+management-task:
+  scheduler:
+    pool-size: ${TASK_SCHEDULER_POOL_SIZE:5}
+    refresh-fixed-delay-ms: ${TASK_SCHEDULER_REFRESH_DELAY_MS:15000}
+  kafka:
+    topics:
+      file-upload-confirmed: ${KAFKA_TOPIC_FILE_UPLOAD_CONFIRMED:conciliaciones.file-upload-confirmed}

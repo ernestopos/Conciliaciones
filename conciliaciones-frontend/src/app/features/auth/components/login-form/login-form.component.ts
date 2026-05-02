@@ -34,7 +34,7 @@ export class LoginFormComponent {
   loading = false;
 
   readonly form = this.fb.group({
-    username: ['admin@conciliaciones.com', [Validators.required, Validators.email]],
+    username: ['', [Validators.required]],
     password: ['', [Validators.required]]
   });
 
@@ -68,7 +68,7 @@ export class LoginFormComponent {
       },
       error: () => {
         this.loading = false;
-        this.snackBar.open('Error temporal en autenticación demo', 'Cerrar', { duration: 3200 });
+        this.snackBar.open('Error temporal de autenticación', 'Cerrar', { duration: 3200 });
       }
     });
   }

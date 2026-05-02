@@ -1,9 +1,13 @@
-FROM eclipse-temurin:21-jdk
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-COPY target/ms-reconciliation-core-1.0.0-SNAPSHOT.jar app.jar
+ARG JAR_FILE=target/ms-reconciliation-core-*.jar
 
-EXPOSE 8080
+COPY ${JAR_FILE} app.jar
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+EXPOSE 9091
+
+ENV JAVA_OPTS=""
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]

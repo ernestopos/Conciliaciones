@@ -1,0 +1,10 @@
+.git
+.idea
+*.iml
+
+src
+target/*
+!target/*.jar
+
+README.md
+openapi-summary.md

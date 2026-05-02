@@ -1,12 +1,23 @@
 import { HttpInterceptorFn } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+import { getStoredAccessToken } from '../services/auth-storage';
 
-/**
- * Interceptor preparado para futura integración real con Keycloak.
- *
- * TODO Keycloak:
- * - Obtener token desde KeycloakAuthProvider.
- * - Inyectar Authorization: Bearer <token> en requests privadas.
- */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  return next(req);
+  const token = getStoredAccessToken();
+
+  const isProtectedBackendRequest =
+    req.url.startsWith(environment.api.core) ||
+    req.url.startsWith(environment.api.fileManagement);
+
+  if (!token || !isProtectedBackendRequest) {
+    return next(req);
+  }
+
+  const authReq = req.clone({
+    setHeaders: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  return next(authReq);
 };

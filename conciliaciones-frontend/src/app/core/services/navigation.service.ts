@@ -17,6 +17,8 @@ export class NavigationService {
         { label: 'Clientes', icon: 'business', route: '/maestros/clientes' },
         { label: 'Productores', icon: 'groups', route: '/maestros/productores' },
         { label: 'Agencias', icon: 'apartment', route: '/maestros/agencias' },
+        { label: 'Carriers', icon: 'domain', route: '/maestros/carriers' },
+        { label: 'Parámetros', icon: 'tune', route: '/maestros/parametros' },
         { label: 'Estados de póliza', icon: 'flag', route: '/maestros/estados-poliza' },
         { label: 'Reglas de comisión', icon: 'rule', route: '/maestros/reglas-comision' }
       ]
@@ -28,6 +30,17 @@ export class NavigationService {
         { label: 'Archivos fuente', icon: 'upload_file', route: '/conciliacion/source-files' },
         { label: 'Ejecuciones', icon: 'sync', route: '/conciliacion/processing-executions' },
         { label: 'Casos de conciliación', icon: 'fact_check', route: '/conciliacion/casos' }
+      ]
+    },
+    {
+      label: 'Upload Files',
+      icon: 'upload_file',
+      children: [
+        {
+          label: 'Upload sources file',
+          icon: 'description',
+          route: '/upload-files/upload-sources-file'
+        }
       ]
     },
     {

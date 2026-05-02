@@ -495,6 +495,56 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 
 -- =========================================================
+-- 12. SOURCE_FILE_TRACEABILITY
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS reconciliation.source_file_traceability (
+    id BIGSERIAL PRIMARY KEY,
+    source_file_id BIGINT NOT NULL,
+    processing_status_id BIGINT NOT NULL,
+    status_name VARCHAR(80) NOT NULL,
+    description VARCHAR(500),
+    error_message TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    CONSTRAINT fk_source_file_traceability_source_file
+        FOREIGN KEY (source_file_id)
+        REFERENCES reconciliation.source_file (id)
+);
+
+-- =========================================================
+-- 13. SCHEDULED_TASK
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS reconciliation.scheduled_task (
+    id BIGSERIAL PRIMARY KEY,
+    task_type VARCHAR(80) NOT NULL,
+    status VARCHAR(40) NOT NULL,
+    source_file_id BIGINT,
+    cron_expression VARCHAR(80) NOT NULL,
+    task_bean_name VARCHAR(150) NOT NULL,
+    payload TEXT,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_by VARCHAR(80) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_by VARCHAR(80),
+    updated_at TIMESTAMP
+);
+
+-- =========================================================
+-- 14. TASK_EXECUTION
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS task_execution (
+    id BIGSERIAL PRIMARY KEY,
+    scheduled_task_id BIGINT NOT NULL,
+    started_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    finished_at TIMESTAMP,
+    successful BOOLEAN,
+    message TEXT
+);
+
+-- =========================================================
 -- 12. INDICES
 -- =========================================================
 
@@ -623,6 +673,18 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_event_timestamp
 
 CREATE INDEX IF NOT EXISTS idx_audit_log_action_id
     ON audit_log(action_id);
+
+CREATE INDEX IF NOT EXISTS idx_source_file_traceability_source_file_id
+    ON reconciliation.source_file_traceability (source_file_id);	
+
+CREATE INDEX IF NOT EXISTS idx_scheduled_task_status_active 
+	ON scheduled_task(status, active);
+
+CREATE INDEX IF NOT EXISTS idx_scheduled_task_source_file 
+	ON scheduled_task(source_file_id);
+
+CREATE INDEX IF NOT EXISTS idx_task_execution_task_id 
+	ON task_execution(scheduled_task_id);
 
 -- =========================================================
 -- 13. DATOS SEMILLA - CARRIER

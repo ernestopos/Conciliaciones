@@ -1,0 +1,11 @@
+spring:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:192.168.1.20:29092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+file-management:
+  kafka:
+    topics:
+      file-upload-confirmed: ${KAFKA_TOPIC_FILE_UPLOAD_CONFIRMED:conciliaciones.file-upload-confirmed}
