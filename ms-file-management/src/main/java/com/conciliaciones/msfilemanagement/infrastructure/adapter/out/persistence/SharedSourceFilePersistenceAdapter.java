@@ -57,10 +57,8 @@ public class SharedSourceFilePersistenceAdapter implements SourceFilePersistence
     public SourceFile updateStatus(Long sourceFileId, ProcessingStatus status, String errorMessage, String updatedBy) {
         SourceFileEntity entity = sourceFileRepository.findById(sourceFileId)
                 .orElseThrow(() -> new BusinessException("No existe archivo fuente con id: " + sourceFileId));
-
         entity.setProcessingStatusId(status.getId());
         entity.setErrorMessage(errorMessage);
-
         SourceFileEntity savedEntity = sourceFileRepository.save(entity);
         saveTraceability(savedEntity, status, errorMessage, updatedBy);
         return toDomain(savedEntity);
@@ -108,6 +106,8 @@ public class SharedSourceFilePersistenceAdapter implements SourceFilePersistence
                 .fileType(toFileType(entity.getFileExtension()))
                 .checksum(entity.getChecksum())
                 .processingStatus(toProcessingStatus(entity.getProcessingStatusId()))
+                .bucketName(entity.getS3Bucket())
+                .objectKey(entity.getS3Key())
                 .auditInfo(AuditInfo.builder()
                         .createdBy(entity.getUploadedBy())
                         .createdAt(toOffsetDateTime(entity.getUploadDate()))

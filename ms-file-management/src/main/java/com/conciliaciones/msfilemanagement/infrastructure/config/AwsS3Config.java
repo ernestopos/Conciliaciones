@@ -56,12 +56,13 @@ public class AwsS3Config {
         log.info("LOG INICIO X = s3Presigner");
         S3Presigner.Builder builder = S3Presigner.builder()
                 .region(Region.of(properties.region()))
-                .credentialsProvider(credentialsProvider);
-
+                .credentialsProvider(credentialsProvider)
+                .serviceConfiguration(S3Configuration.builder()
+                        .pathStyleAccessEnabled(properties.pathStyleAccessEnabled())
+                        .build());
         if (properties.localstackEnabled()) {
             builder.endpointOverride(URI.create(properties.endpoint()));
         }
-
         return builder.build();
     }
 }
