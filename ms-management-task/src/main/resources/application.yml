@@ -14,7 +14,7 @@ spring:
     hibernate:
       ddl-auto: none
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:192.168.1.20:29092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:192.168.1.20:9092}
     consumer:
       group-id: ${KAFKA_GROUP_ID:ms-management-task}
       auto-offset-reset: earliest

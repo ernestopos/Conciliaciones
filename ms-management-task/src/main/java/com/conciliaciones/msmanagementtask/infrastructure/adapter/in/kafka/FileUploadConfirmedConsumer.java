@@ -23,6 +23,17 @@ public class FileUploadConfirmedConsumer {
     public void consume(FileUploadConfirmedEvent event) throws JsonProcessingException {
         log.info("LOG INICIO X = consume - sourceFileId={}", event.sourceFileId());
         String payload = objectMapper.writeValueAsString(event);
+
+        /*
+        FileUploadConfirmedEvent event = new FileUploadConfirmedEvent(
+                    sourceFile.getId(),
+                    sourceFile.getBucketName(),
+                    sourceFile.getObjectKey(),
+                    sourceFile.getOriginalFileName(),
+                    "S3_UPLOAD_CONFIRMED"
+            );
+         */
+
         createScheduledTaskUseCase.create(new CreateScheduledTaskCommand(
                 event.sourceFileId(),
                 TaskType.FILE_DATA_REVIEW,

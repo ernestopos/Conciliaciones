@@ -1,7 +1,6 @@
 package com.conciliaciones.persistence.jpa.entity;
 
-import com.conciliaciones.domain.task.ScheduledTaskStatus;
-import com.conciliaciones.domain.task.TaskType;
+import com.conciliaciones.domain.entity.ParameterEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,22 +19,22 @@ public class ScheduledTaskEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "task_type", nullable = false, length = 80)
-    private TaskType taskType;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_task_type", nullable = false)
+    private ParameterEntity taskType;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 40)
-    private ScheduledTaskStatus status;
-
-    @Column(name = "source_file_id")
-    private Long sourceFileId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_status", nullable = false)
+    private ParameterEntity status;
 
     @Column(name = "cron_expression", nullable = false, length = 80)
     private String cronExpression;
 
-    @Column(name = "task_bean_name", nullable = false, length = 150)
+    @Column(name = "task_bean_name", nullable = false, length = 200)
     private String taskBeanName;
+
+    @Column(name = "method_name", nullable = false, length = 200)
+    private String methodName;
 
     @Column(name = "payload", columnDefinition = "TEXT")
     private String payload;
@@ -57,9 +56,12 @@ public class ScheduledTaskEntity {
 
     @PrePersist
     void prePersist() {
-        if (createdAt == null) createdAt = LocalDateTime.now();
-        if (active == null) active = Boolean.TRUE;
-        if (status == null) status = ScheduledTaskStatus.PENDING;
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (active == null) {
+            active = Boolean.TRUE;
+        }
     }
 
     @PreUpdate

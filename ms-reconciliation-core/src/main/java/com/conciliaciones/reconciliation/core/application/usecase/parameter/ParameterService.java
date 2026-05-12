@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
             log.info("LOG INICIO X = createParameter");
 
             ParameterEntity entity = ParameterEntity.builder()
+                .id(request.id())
                 .name(request.name())
                 .description(request.description())
                 .value(request.value())
