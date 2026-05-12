@@ -15,8 +15,11 @@ CREATE TABLE IF NOT EXISTS security_audit_log (
 -- =========================================================
 -- LIMPIEZA OPCIONAL PARA REEJECUTAR PRUEBAS
 -- =========================================================
+DELETE FROM execution_plan_task;
+DELETE FROM scheduled_task;
 DELETE FROM security_audit_log;
 DELETE FROM commission_payment_detail;
+DELETE FROM security_audit_log;
 DELETE FROM commission_payment;
 DELETE FROM reconciliation_case;
 DELETE FROM commission_statement_item;

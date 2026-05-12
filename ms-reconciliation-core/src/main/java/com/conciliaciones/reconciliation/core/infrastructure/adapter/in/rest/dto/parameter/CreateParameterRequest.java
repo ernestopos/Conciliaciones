@@ -4,6 +4,7 @@
 import jakarta.validation.constraints.NotNull;
 
     public record CreateParameterRequest(
+            @NotNull Long id,
             @NotBlank String name,
         String description,
         @NotBlank String value,
