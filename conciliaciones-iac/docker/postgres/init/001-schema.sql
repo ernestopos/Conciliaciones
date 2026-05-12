@@ -16,7 +16,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- 1. TABLA GENERAL DE PARAMETROS
 -- =========================================================
 CREATE TABLE IF NOT EXISTS parameter (
-    id                  BIGSERIAL PRIMARY KEY,
+    id                  BIGINT PRIMARY KEY,
     name                VARCHAR(150) NOT NULL,
     description         VARCHAR(500),
     value               VARCHAR(150) NOT NULL,
@@ -518,34 +518,40 @@ CREATE TABLE IF NOT EXISTS reconciliation.source_file_traceability (
 
 CREATE TABLE IF NOT EXISTS reconciliation.scheduled_task (
     id BIGSERIAL PRIMARY KEY,
-    task_type VARCHAR(80) NOT NULL,
-    status VARCHAR(40) NOT NULL,
-    source_file_id BIGINT,
+    id_task_type BIGINT NOT NULL,
+    id_status BIGINT NOT NULL,
     cron_expression VARCHAR(80) NOT NULL,
-    task_bean_name VARCHAR(150) NOT NULL,
+    task_bean_name VARCHAR(200) NOT NULL,
+	method_name VARCHAR(200) NOT NULL,
     payload TEXT,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created_by VARCHAR(80) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_by VARCHAR(80),
-    updated_at TIMESTAMP
+    updated_at TIMESTAMP,
+	CONSTRAINT fk_scheduled_task_parameter_task_type FOREIGN KEY (id_task_type) REFERENCES reconciliation.parameter (id),
+	CONSTRAINT fk_scheduled_task_parameter_status FOREIGN KEY (id_status) REFERENCES reconciliation.parameter (id)
 );
 
 -- =========================================================
--- 14. TASK_EXECUTION
+-- 14. execution_plan_task
 -- =========================================================
 
-CREATE TABLE IF NOT EXISTS task_execution (
+CREATE TABLE IF NOT EXISTS execution_plan_task (
     id BIGSERIAL PRIMARY KEY,
-    scheduled_task_id BIGINT NOT NULL,
-    started_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    id_source_file BIGINT NOT NULL,
+    id_status BIGINT NOT NULL,
+	plan_execute_code VARCHAR(200) NOT NULL,
+	started_at TIMESTAMP NOT NULL DEFAULT NOW(),
     finished_at TIMESTAMP,
     successful BOOLEAN,
-    message TEXT
+    message TEXT,
+	CONSTRAINT fk_execution_plan_task_source_file FOREIGN KEY (id_source_file) REFERENCES reconciliation.source_file(id),
+	CONSTRAINT fk_execution_plan_task_parameter_status FOREIGN KEY (id_status) REFERENCES reconciliation.parameter (id)
 );
 
 -- =========================================================
--- 12. INDICES
+-- 15. INDICES
 -- =========================================================
 
 CREATE INDEX IF NOT EXISTS idx_agency_carrier_id
@@ -678,13 +684,16 @@ CREATE INDEX IF NOT EXISTS idx_source_file_traceability_source_file_id
     ON reconciliation.source_file_traceability (source_file_id);	
 
 CREATE INDEX IF NOT EXISTS idx_scheduled_task_status_active 
-	ON scheduled_task(status, active);
+    ON reconciliation.scheduled_task(id_status, active);
 
-CREATE INDEX IF NOT EXISTS idx_scheduled_task_source_file 
-	ON scheduled_task(source_file_id);
+CREATE INDEX IF NOT EXISTS idx_scheduled_task_task_type
+    ON reconciliation.scheduled_task(id_task_type);
 
-CREATE INDEX IF NOT EXISTS idx_task_execution_task_id 
-	ON task_execution(scheduled_task_id);
+CREATE INDEX IF NOT EXISTS idx_execution_plan_task_source_file 
+    ON reconciliation.execution_plan_task(id_source_file);
+
+CREATE INDEX IF NOT EXISTS idx_execution_plan_task_status 
+    ON reconciliation.execution_plan_task(id_status);
 
 -- =========================================================
 -- 13. DATOS SEMILLA - CARRIER
@@ -699,139 +708,240 @@ VALUES
 ON CONFLICT (code) DO NOTHING;
 
 -- =========================================================
--- 14. DATOS SEMILLA - PARAMETER
--- name  = codigo tecnico
--- value = texto visible
+-- 14. DATOS SEMILLA - PARAMETER (IDS FIJOS)
 -- =========================================================
 
--- GROUP: SOURCE_FILE_STATUS
-INSERT INTO parameter (name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
-    ('UPLOADED', 'Archivo cargado y pendiente de procesamiento', 'Subido', 'SOURCE_FILE_STATUS', TRUE, 1, 'system'),
-    ('PROCESSING', 'Archivo en procesamiento', 'Procesando', 'SOURCE_FILE_STATUS', TRUE, 2, 'system'),
-    ('PROCESSED', 'Archivo procesado correctamente', 'Procesado', 'SOURCE_FILE_STATUS', TRUE, 3, 'system'),
-    ('FAILED', 'Archivo con error en procesamiento', 'Fallido', 'SOURCE_FILE_STATUS', TRUE, 4, 'system'),
-    ('PARTIALLY_PROCESSED', 'Archivo procesado parcialmente', 'Procesado Parcialmente', 'SOURCE_FILE_STATUS', TRUE, 5, 'system')
-ON CONFLICT (parameter_group, name) DO NOTHING;
+(1,'PRESIGNED','URL prefirmada generada para carga del archivo','Prefirmado','SOURCE_FILE_STATUS',TRUE,1,'system'),
+(2,'S3_UPLOAD','Archivo cargado correctamente en S3','Cargado en S3','SOURCE_FILE_STATUS',TRUE,2,'system'),
+(3,'DATA_REVIEW','Archivo en etapa de revisión de datos','Revisión de Datos','SOURCE_FILE_STATUS',TRUE,3,'system'),
+(4,'PROCESS_DATA','Archivo en procesamiento de datos','Procesando Datos','SOURCE_FILE_STATUS',TRUE,4,'system'),
+(5,'RULER_APLICATION','Aplicación de reglas sobre los datos procesados','Aplicando Reglas','SOURCE_FILE_STATUS',TRUE,5,'system'),
+(6,'PROCESS_FINALICE','Proceso finalizado correctamente','Proceso Finalizado','SOURCE_FILE_STATUS',TRUE,6,'system'),
+(7,'ERROR_PRESIGNED','Error durante la generación de la URL prefirmada','Error Prefirmado','SOURCE_FILE_STATUS',TRUE,7,'system'),
+(8,'ERROR_S3_UPLOAD','Error durante la carga del archivo en S3','Error Carga S3','SOURCE_FILE_STATUS',TRUE,8,'system'),
+(9,'ERROR_DATA_REVIEW','Error durante la revisión de datos','Error Revisión Datos','SOURCE_FILE_STATUS',TRUE,9,'system'),
+(10,'ERROR_PROCESS_DATA','Error durante el procesamiento de datos','Error Procesamiento','SOURCE_FILE_STATUS',TRUE,10,'system'),
+(11,'ERROR_RULER_APLICATION','Error durante la aplicación de reglas','Error Aplicación Reglas','SOURCE_FILE_STATUS',TRUE,11,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;
 
--- GROUP: PARSE_STATUS
-INSERT INTO parameter (name, description, value, parameter_group, active, sort_order, created_by)
+-- GROUP: PARSE_STATUS (12 - 14)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
-    ('PENDING', 'Fila pendiente de parseo', 'Pendiente', 'PARSE_STATUS', TRUE, 1, 'system'),
-    ('PARSED', 'Fila parseada correctamente', 'Parseado', 'PARSE_STATUS', TRUE, 2, 'system'),
-    ('FAILED', 'Error en el parseo de la fila', 'Fallido', 'PARSE_STATUS', TRUE, 3, 'system')
-ON CONFLICT (parameter_group, name) DO NOTHING;
+(12,'PENDING','Fila pendiente de parseo','Pendiente','PARSE_STATUS',TRUE,1,'system'),
+(13,'PARSED','Fila parseada correctamente','Parseado','PARSE_STATUS',TRUE,2,'system'),
+(14,'FAILED','Error en el parseo de la fila','Fallido','PARSE_STATUS',TRUE,3,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;
 
--- GROUP: POLICY_STATUS
-INSERT INTO parameter (name, description, value, parameter_group, active, sort_order, created_by)
+-- GROUP: POLICY_STATUS (15 - 21)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
-    ('PENDING', 'Póliza pendiente', 'Pendiente', 'POLICY_STATUS', TRUE, 1, 'system'),
-    ('ACTIVE', 'Póliza activa', 'Activa', 'POLICY_STATUS', TRUE, 2, 'system'),
-    ('APPROVED', 'Póliza aprobada', 'Aprobada', 'POLICY_STATUS', TRUE, 3, 'system'),
-    ('CANCELLED', 'Póliza cancelada', 'Cancelada', 'POLICY_STATUS', TRUE, 4, 'system'),
-    ('TERMINATED', 'Póliza terminada', 'Terminada', 'POLICY_STATUS', TRUE, 5, 'system'),
-    ('NOT_ASSIGNED', 'Póliza sin asignación', 'No Asignada', 'POLICY_STATUS', TRUE, 6, 'system'),
-    ('UNKNOWN', 'Estado desconocido', 'Desconocido', 'POLICY_STATUS', TRUE, 7, 'system')
-ON CONFLICT (parameter_group, name) DO NOTHING;
+(15,'PENDING','Póliza pendiente','Pendiente','POLICY_STATUS',TRUE,1,'system'),
+(16,'ACTIVE','Póliza activa','Activa','POLICY_STATUS',TRUE,2,'system'),
+(17,'APPROVED','Póliza aprobada','Aprobada','POLICY_STATUS',TRUE,3,'system'),
+(18,'CANCELLED','Póliza cancelada','Cancelada','POLICY_STATUS',TRUE,4,'system'),
+(19,'TERMINATED','Póliza terminada','Terminada','POLICY_STATUS',TRUE,5,'system'),
+(20,'NOT_ASSIGNED','Póliza sin asignación','No Asignada','POLICY_STATUS',TRUE,6,'system'),
+(21,'UNKNOWN','Estado desconocido','Desconocido','POLICY_STATUS',TRUE,7,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;
 
--- GROUP: PRODUCER_ROLE_TYPE
-INSERT INTO parameter (name, description, value, parameter_group, active, sort_order, created_by)
+-- GROUP: PRODUCER_ROLE_TYPE (22 - 27)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
-    ('PRIMARY_AGENT', 'Agente principal de la póliza', 'Agente Principal', 'PRODUCER_ROLE_TYPE', TRUE, 1, 'system'),
-    ('SUB_AGENT', 'Subagente asociado', 'Subagente', 'PRODUCER_ROLE_TYPE', TRUE, 2, 'system'),
-    ('MANAGER', 'Manager o supervisor', 'Manager', 'PRODUCER_ROLE_TYPE', TRUE, 3, 'system'),
-    ('AGENCY', 'Pago o rol asociado a agencia', 'Agencia', 'PRODUCER_ROLE_TYPE', TRUE, 4, 'system'),
-    ('PAYEE', 'Payee del carrier', 'Beneficiario de Pago', 'PRODUCER_ROLE_TYPE', TRUE, 5, 'system'),
-    ('UNKNOWN', 'Rol no determinado', 'Desconocido', 'PRODUCER_ROLE_TYPE', TRUE, 6, 'system')
-ON CONFLICT (parameter_group, name) DO NOTHING;
+(22,'PRIMARY_AGENT','Agente principal de la póliza','Agente Principal','PRODUCER_ROLE_TYPE',TRUE,1,'system'),
+(23,'SUB_AGENT','Subagente asociado','Subagente','PRODUCER_ROLE_TYPE',TRUE,2,'system'),
+(24,'MANAGER','Manager o supervisor','Manager','PRODUCER_ROLE_TYPE',TRUE,3,'system'),
+(25,'AGENCY','Pago o rol asociado a agencia','Agencia','PRODUCER_ROLE_TYPE',TRUE,4,'system'),
+(26,'PAYEE','Payee del carrier','Beneficiario de Pago','PRODUCER_ROLE_TYPE',TRUE,5,'system'),
+(27,'UNKNOWN','Rol no determinado','Desconocido','PRODUCER_ROLE_TYPE',TRUE,6,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;
 
--- GROUP: COMMISSION_RULE_TYPE
-INSERT INTO parameter (name, description, value, parameter_group, active, sort_order, created_by)
+-- GROUP: COMMISSION_RULE_TYPE (28 - 32)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
-    ('FIXED_AMOUNT', 'Regla por monto fijo', 'Monto Fijo', 'COMMISSION_RULE_TYPE', TRUE, 1, 'system'),
-    ('PERCENTAGE', 'Regla por porcentaje', 'Porcentaje', 'COMMISSION_RULE_TYPE', TRUE, 2, 'system'),
-    ('SPLIT_PERCENTAGE', 'Distribución porcentual', 'Split Porcentaje', 'COMMISSION_RULE_TYPE', TRUE, 3, 'system'),
-    ('VALIDATION_RULE', 'Regla de validación', 'Regla de Validación', 'COMMISSION_RULE_TYPE', TRUE, 4, 'system'),
-    ('EXCLUSION_RULE', 'Regla de exclusión', 'Regla de Exclusión', 'COMMISSION_RULE_TYPE', TRUE, 5, 'system')
-ON CONFLICT (parameter_group, name) DO NOTHING;
+(28,'FIXED_AMOUNT','Regla por monto fijo','Monto Fijo','COMMISSION_RULE_TYPE',TRUE,1,'system'),
+(29,'PERCENTAGE','Regla por porcentaje','Porcentaje','COMMISSION_RULE_TYPE',TRUE,2,'system'),
+(30,'SPLIT_PERCENTAGE','Distribución porcentual','Split Porcentaje','COMMISSION_RULE_TYPE',TRUE,3,'system'),
+(31,'VALIDATION_RULE','Regla de validación','Regla de Validación','COMMISSION_RULE_TYPE',TRUE,4,'system'),
+(32,'EXCLUSION_RULE','Regla de exclusión','Regla de Exclusión','COMMISSION_RULE_TYPE',TRUE,5,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;
 
--- GROUP: RECONCILIATION_CASE_TYPE
-INSERT INTO parameter (name, description, value, parameter_group, active, sort_order, created_by)
+-- GROUP: RECONCILIATION_CASE_TYPE (33 - 42)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
-    ('PAYMENT_ON_CANCELLED_POLICY', 'Se detectó pago a póliza cancelada', 'Pago sobre Póliza Cancelada', 'RECONCILIATION_CASE_TYPE', TRUE, 1, 'system'),
-    ('PAYMENT_WITHOUT_ASSIGNMENT', 'No existe asignación válida para pagar', 'Pago sin Asignación', 'RECONCILIATION_CASE_TYPE', TRUE, 2, 'system'),
-    ('DUPLICATE_COMMISSION', 'Registro de comisión duplicado', 'Comisión Duplicada', 'RECONCILIATION_CASE_TYPE', TRUE, 3, 'system'),
-    ('MISSING_POLICY', 'No se encontró la póliza', 'Póliza Faltante', 'RECONCILIATION_CASE_TYPE', TRUE, 4, 'system'),
-    ('AMOUNT_MISMATCH', 'Monto inconsistente', 'Diferencia de Monto', 'RECONCILIATION_CASE_TYPE', TRUE, 5, 'system'),
-    ('MISSING_PRODUCER', 'No se encontró productor', 'Productor Faltante', 'RECONCILIATION_CASE_TYPE', TRUE, 6, 'system'),
-    ('SPLIT_INCONSISTENCY', 'Split de pago inconsistente', 'Inconsistencia de Split', 'RECONCILIATION_CASE_TYPE', TRUE, 7, 'system'),
-    ('UNKNOWN_STATUS', 'Estado no homologado o desconocido', 'Estado Desconocido', 'RECONCILIATION_CASE_TYPE', TRUE, 8, 'system'),
-    ('DUPLICATE_SOURCE_ROW', 'La fila de origen ya fue importada', 'Fila de Origen Duplicada', 'RECONCILIATION_CASE_TYPE', TRUE, 9, 'system'),
-    ('INVALID_DATE_RANGE', 'Rango de fechas inconsistente', 'Rango de Fechas Inválido', 'RECONCILIATION_CASE_TYPE', TRUE, 10, 'system')
-ON CONFLICT (parameter_group, name) DO NOTHING;
+(33,'PAYMENT_ON_CANCELLED_POLICY','Se detectó pago a póliza cancelada','Pago sobre Póliza Cancelada','RECONCILIATION_CASE_TYPE',TRUE,1,'system'),
+(34,'PAYMENT_WITHOUT_ASSIGNMENT','No existe asignación válida para pagar','Pago sin Asignación','RECONCILIATION_CASE_TYPE',TRUE,2,'system'),
+(35,'DUPLICATE_COMMISSION','Registro de comisión duplicado','Comisión Duplicada','RECONCILIATION_CASE_TYPE',TRUE,3,'system'),
+(36,'MISSING_POLICY','No se encontró la póliza','Póliza Faltante','RECONCILIATION_CASE_TYPE',TRUE,4,'system'),
+(37,'AMOUNT_MISMATCH','Monto inconsistente','Diferencia de Monto','RECONCILIATION_CASE_TYPE',TRUE,5,'system'),
+(38,'MISSING_PRODUCER','No se encontró productor','Productor Faltante','RECONCILIATION_CASE_TYPE',TRUE,6,'system'),
+(39,'SPLIT_INCONSISTENCY','Split de pago inconsistente','Inconsistencia de Split','RECONCILIATION_CASE_TYPE',TRUE,7,'system'),
+(40,'UNKNOWN_STATUS','Estado no homologado','Estado Desconocido','RECONCILIATION_CASE_TYPE',TRUE,8,'system'),
+(41,'DUPLICATE_SOURCE_ROW','Fila duplicada','Fila de Origen Duplicada','RECONCILIATION_CASE_TYPE',TRUE,9,'system'),
+(42,'INVALID_DATE_RANGE','Rango inconsistente','Rango de Fechas Inválido','RECONCILIATION_CASE_TYPE',TRUE,10,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;
 
--- GROUP: SEVERITY_LEVEL
-INSERT INTO parameter (name, description, value, parameter_group, active, sort_order, created_by)
+-- GROUP: SEVERITY_LEVEL (43 - 46)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
-    ('LOW', 'Severidad baja', 'Baja', 'SEVERITY_LEVEL', TRUE, 1, 'system'),
-    ('MEDIUM', 'Severidad media', 'Media', 'SEVERITY_LEVEL', TRUE, 2, 'system'),
-    ('HIGH', 'Severidad alta', 'Alta', 'SEVERITY_LEVEL', TRUE, 3, 'system'),
-    ('CRITICAL', 'Severidad crítica', 'Crítica', 'SEVERITY_LEVEL', TRUE, 4, 'system')
-ON CONFLICT (parameter_group, name) DO NOTHING;
+(43,'LOW','Severidad baja','Baja','SEVERITY_LEVEL',TRUE,1,'system'),
+(44,'MEDIUM','Severidad media','Media','SEVERITY_LEVEL',TRUE,2,'system'),
+(45,'HIGH','Severidad alta','Alta','SEVERITY_LEVEL',TRUE,3,'system'),
+(46,'CRITICAL','Severidad crítica','Crítica','SEVERITY_LEVEL',TRUE,4,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;
 
--- GROUP: CASE_STATUS
-INSERT INTO parameter (name, description, value, parameter_group, active, sort_order, created_by)
+-- GROUP: CASE_STATUS (47 - 50)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
-    ('OPEN', 'Caso abierto', 'Abierto', 'CASE_STATUS', TRUE, 1, 'system'),
-    ('IN_REVIEW', 'Caso en revisión', 'En Revisión', 'CASE_STATUS', TRUE, 2, 'system'),
-    ('RESOLVED', 'Caso resuelto', 'Resuelto', 'CASE_STATUS', TRUE, 3, 'system'),
-    ('DISMISSED', 'Caso descartado', 'Descartado', 'CASE_STATUS', TRUE, 4, 'system')
-ON CONFLICT (parameter_group, name) DO NOTHING;
+(47,'OPEN','Caso abierto','Abierto','CASE_STATUS',TRUE,1,'system'),
+(48,'IN_REVIEW','Caso en revisión','En Revisión','CASE_STATUS',TRUE,2,'system'),
+(49,'RESOLVED','Caso resuelto','Resuelto','CASE_STATUS',TRUE,3,'system'),
+(50,'DISMISSED','Caso descartado','Descartado','CASE_STATUS',TRUE,4,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;
 
--- GROUP: PAYMENT_STATUS
-INSERT INTO parameter (name, description, value, parameter_group, active, sort_order, created_by)
+-- GROUP: PAYMENT_STATUS (51 - 56)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
-    ('DRAFT', 'Liquidación en borrador', 'Borrador', 'PAYMENT_STATUS', TRUE, 1, 'system'),
-    ('GENERATED', 'Pago generado', 'Generado', 'PAYMENT_STATUS', TRUE, 2, 'system'),
-    ('APPROVED', 'Pago aprobado', 'Aprobado', 'PAYMENT_STATUS', TRUE, 3, 'system'),
-    ('REJECTED', 'Pago rechazado', 'Rechazado', 'PAYMENT_STATUS', TRUE, 4, 'system'),
-    ('PAID', 'Pago realizado', 'Pagado', 'PAYMENT_STATUS', TRUE, 5, 'system'),
-    ('CANCELLED', 'Pago cancelado', 'Cancelado', 'PAYMENT_STATUS', TRUE, 6, 'system')
-ON CONFLICT (parameter_group, name) DO NOTHING;
+(51,'DRAFT','Liquidación en borrador','Borrador','PAYMENT_STATUS',TRUE,1,'system'),
+(52,'GENERATED','Pago generado','Generado','PAYMENT_STATUS',TRUE,2,'system'),
+(53,'APPROVED','Pago aprobado','Aprobado','PAYMENT_STATUS',TRUE,3,'system'),
+(54,'REJECTED','Pago rechazado','Rechazado','PAYMENT_STATUS',TRUE,4,'system'),
+(55,'PAID','Pago realizado','Pagado','PAYMENT_STATUS',TRUE,5,'system'),
+(56,'CANCELLED','Pago cancelado','Cancelado','PAYMENT_STATUS',TRUE,6,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;
 
--- GROUP: AUDIT_ACTION_TYPE
-INSERT INTO parameter (name, description, value, parameter_group, active, sort_order, created_by)
+-- GROUP: AUDIT_ACTION_TYPE (57 - 64)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
-    ('INSERT', 'Creación de registro', 'Inserción', 'AUDIT_ACTION_TYPE', TRUE, 1, 'system'),
-    ('UPDATE', 'Actualización de registro', 'Actualización', 'AUDIT_ACTION_TYPE', TRUE, 2, 'system'),
-    ('DELETE', 'Eliminación de registro', 'Eliminación', 'AUDIT_ACTION_TYPE', TRUE, 3, 'system'),
-    ('PROCESS', 'Ejecución de proceso', 'Procesamiento', 'AUDIT_ACTION_TYPE', TRUE, 4, 'system'),
-    ('APPROVE', 'Aprobación de operación', 'Aprobación', 'AUDIT_ACTION_TYPE', TRUE, 5, 'system'),
-    ('REJECT', 'Rechazo de operación', 'Rechazo', 'AUDIT_ACTION_TYPE', TRUE, 6, 'system'),
-    ('LOGIN', 'Autenticación en sistema', 'Inicio de Sesión', 'AUDIT_ACTION_TYPE', TRUE, 7, 'system'),
-    ('UPLOAD', 'Carga de archivo en sistema', 'Carga de Archivo', 'AUDIT_ACTION_TYPE', TRUE, 8, 'system')
-ON CONFLICT (parameter_group, name) DO NOTHING;
+(57,'INSERT','Creación de registro','Inserción','AUDIT_ACTION_TYPE',TRUE,1,'system'),
+(58,'UPDATE','Actualización de registro','Actualización','AUDIT_ACTION_TYPE',TRUE,2,'system'),
+(59,'DELETE','Eliminación de registro','Eliminación','AUDIT_ACTION_TYPE',TRUE,3,'system'),
+(60,'PROCESS','Ejecución de proceso','Procesamiento','AUDIT_ACTION_TYPE',TRUE,4,'system'),
+(61,'APPROVE','Aprobación de operación','Aprobación','AUDIT_ACTION_TYPE',TRUE,5,'system'),
+(62,'REJECT','Rechazo de operación','Rechazo','AUDIT_ACTION_TYPE',TRUE,6,'system'),
+(63,'LOGIN','Autenticación en sistema','Inicio de Sesión','AUDIT_ACTION_TYPE',TRUE,7,'system'),
+(64,'UPLOAD','Carga de archivo en sistema','Carga de Archivo','AUDIT_ACTION_TYPE',TRUE,8,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;
 
--- GROUP: COMMISSION_RAW_STATUS
-INSERT INTO parameter (name, description, value, parameter_group, active, sort_order, created_by)
+-- GROUP: COMMISSION_RAW_STATUS (65 - 69)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
-    ('ACTIVE', 'Estado crudo activo', 'Activo', 'COMMISSION_RAW_STATUS', TRUE, 1, 'system'),
-    ('INACTIVE', 'Estado crudo inactivo', 'Inactivo', 'COMMISSION_RAW_STATUS', TRUE, 2, 'system'),
-    ('CANCELLED', 'Estado crudo cancelado', 'Cancelado', 'COMMISSION_RAW_STATUS', TRUE, 3, 'system'),
-    ('PENDING', 'Estado crudo pendiente', 'Pendiente', 'COMMISSION_RAW_STATUS', TRUE, 4, 'system'),
-    ('UNKNOWN', 'Estado crudo sin homologar', 'Desconocido', 'COMMISSION_RAW_STATUS', TRUE, 5, 'system')
-ON CONFLICT (parameter_group, name) DO NOTHING;
+(65,'ACTIVE','Estado crudo activo','Activo','COMMISSION_RAW_STATUS',TRUE,1,'system'),
+(66,'INACTIVE','Estado crudo inactivo','Inactivo','COMMISSION_RAW_STATUS',TRUE,2,'system'),
+(67,'CANCELLED','Estado crudo cancelado','Cancelado','COMMISSION_RAW_STATUS',TRUE,3,'system'),
+(68,'PENDING','Estado crudo pendiente','Pendiente','COMMISSION_RAW_STATUS',TRUE,4,'system'),
+(69,'UNKNOWN','Estado crudo sin homologar','Desconocido','COMMISSION_RAW_STATUS',TRUE,5,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;
 
--- GROUP: REASON_CODE
-INSERT INTO parameter (name, description, value, parameter_group, active, sort_order, created_by)
+-- GROUP: REASON_CODE (70 - 75)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
-    ('NEW_BUSINESS', 'Alta o nueva venta', 'Nuevo Negocio', 'REASON_CODE', TRUE, 1, 'system'),
-    ('RENEWAL', 'Renovación de póliza', 'Renovación', 'REASON_CODE', TRUE, 2, 'system'),
-    ('CANCELLATION', 'Cancelación de póliza', 'Cancelación', 'REASON_CODE', TRUE, 3, 'system'),
-    ('ADJUSTMENT', 'Ajuste monetario o técnico', 'Ajuste', 'REASON_CODE', TRUE, 4, 'system'),
-    ('RETRO', 'Movimiento retroactivo', 'Retroactivo', 'REASON_CODE', TRUE, 5, 'system'),
-    ('UNKNOWN', 'Código de razón no homologado', 'Desconocido', 'REASON_CODE', TRUE, 6, 'system')
-ON CONFLICT (parameter_group, name) DO NOTHING;
+(70,'NEW_BUSINESS','Alta o nueva venta','Nuevo Negocio','REASON_CODE',TRUE,1,'system'),
+(71,'RENEWAL','Renovación de póliza','Renovación','REASON_CODE',TRUE,2,'system'),
+(72,'CANCELLATION','Cancelación de póliza','Cancelación','REASON_CODE',TRUE,3,'system'),
+(73,'ADJUSTMENT','Ajuste monetario o técnico','Ajuste','REASON_CODE',TRUE,4,'system'),
+(74,'RETRO','Movimiento retroactivo','Retroactivo','REASON_CODE',TRUE,5,'system'),
+(75,'UNKNOWN','Código de razón no homologado','Desconocido','REASON_CODE',TRUE,6,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;
+
+
 
 -- =========================================================
 -- 15. COMENTARIOS
