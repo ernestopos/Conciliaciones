@@ -1,4 +1,4 @@
-package com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto;
+package com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.sourceFile;
 
 import java.time.LocalDateTime;
 

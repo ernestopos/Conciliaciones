@@ -1,0 +1,71 @@
+<app-page-header title="Detalle de ejecución" subtitle="Plan de tareas ejecutado" />
+
+<a mat-button routerLink="/conciliacion/processing-executions" class="back-link">
+  <mat-icon>arrow_back</mat-icon>
+  Volver
+</a>
+
+@if (loading) {
+  <app-loading-spinner />
+} @else if (!detail) {
+  <app-empty-state title="Ejecución no encontrada" description="No fue posible cargar el detalle del plan de tareas." />
+} @else {
+  <section class="summary-card">
+    <div>
+      <span class="label">Plan</span>
+      <strong>{{ detail.planExecuteCode }}</strong>
+    </div>
+    <div>
+      <span class="label">Archivo fuente</span>
+      <strong>{{ detail.sourceFileId }} - {{ detail.originalFileName || '—' }}</strong>
+    </div>
+    <div>
+      <span class="label">Estado</span>
+      <strong>{{ detail.statusName }}</strong>
+    </div>
+    <div>
+      <span class="label">Inicio</span>
+      <strong>{{ display(detail.startedAt) }}</strong>
+    </div>
+    <div>
+      <span class="label">Fin</span>
+      <strong>{{ display(detail.finishedAt) }}</strong>
+    </div>
+    <div>
+      <span class="label">Exitoso</span>
+      <strong>{{ display(detail.successful) }}</strong>
+    </div>
+    <div class="message">
+      <span class="label">Mensaje</span>
+      <strong>{{ display(detail.message) }}</strong>
+    </div>
+  </section>
+
+  <section class="pipeline-card">
+    <h2>Pipeline de tareas</h2>
+
+    @if (!detail.tasks.length) {
+      <app-empty-state title="Sin tareas" description="Este plan no tiene tareas asociadas." />
+    } @else {
+      <div class="pipeline">
+        @for (task of detail.tasks; track task.id; let last = $last) {
+          <article class="step" [class]="stepClass(task)">
+            <div class="step-icon" aria-hidden="true"></div>
+            <div class="step-content">
+              <strong class="step-title">{{ task.taskOrder }}. {{ task.taskTypeName || task.taskBeanName }}</strong>
+              <p>{{ task.taskBeanName }}.{{ task.methodName }}</p>
+              <small>Cron: {{ display(task.cronExpression) }} | Activa: {{ display(task.active) }}</small>
+              <div class="step-status">
+                <span>Estado</span>
+                <strong>{{ task.statusName || '—' }}</strong>
+              </div>
+            </div>
+          </article>
+          @if (!last) {
+            <div class="connector"></div>
+          }
+        }
+      </div>
+    }
+  </section>
+}

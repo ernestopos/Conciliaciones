@@ -55,15 +55,13 @@ public class PipelineTaskExecutorService {
 
         try {
             validateSequentialExecution(task);
-            markTaskAsProcess(task);
             publishPlanStatus(task.getExecutionPlanTask(), "Tarea en proceso: " + taskTypeName);
-
+            markTaskAsProcess(task);
             ScheduledTaskRunnable runnable = applicationContext.getBean(task.getTaskBeanName(), ScheduledTaskRunnable.class);
             runnable.execute(task);
-
+            sleepDemoExecution();
             markTaskAsExecuted(task);
             activateNextTaskOrClosePlan(task);
-
             log.info("LOG FIN X = executePipelineTask - taskId={}, executionPlanTaskId={}, taskType={}",
                     task.getId(), executionPlanTaskId, taskTypeName);
         } catch (Exception ex) {
@@ -72,6 +70,15 @@ public class PipelineTaskExecutorService {
             markTaskAsFailed(task, ex.getMessage());
             markPlanAsFailed(task.getExecutionPlanTask(), ex.getMessage());
             publishPlanStatus(task.getExecutionPlanTask(), ex.getMessage());
+        }
+    }
+
+    private void sleepDemoExecution() {
+        try {
+            Thread.sleep(20_000); // 2 minutos
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("La tarea fue interrumpida durante la pausa de demo", e);
         }
     }
 

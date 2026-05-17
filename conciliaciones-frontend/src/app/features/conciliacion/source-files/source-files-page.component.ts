@@ -53,6 +53,23 @@ export class SourceFilesPageComponent implements OnInit {
   constructor(private readonly service: SourceFileService) {}
 
   ngOnInit(): void {
+    this.loadSourceFiles();
+  }
+
+  applyFilter(query: string): void {
+    const q = query.trim().toLowerCase();
+
+    if (!q) {
+      this.filtered = this.rows;
+      return;
+    }
+
+    this.filtered = this.rows.filter((item) => JSON.stringify(item).toLowerCase().includes(q));
+  }
+
+  private loadSourceFiles(): void {
+    this.loading = true;
+
     this.service.list().subscribe({
       next: (data) => {
         this.rows = data;
@@ -65,16 +82,5 @@ export class SourceFilesPageComponent implements OnInit {
         this.loading = false;
       }
     });
-  }
-
-  applyFilter(query: string): void {
-    const q = query.trim().toLowerCase();
-
-    if (!q) {
-      this.filtered = this.rows;
-      return;
-    }
-
-    this.filtered = this.rows.filter((item) => JSON.stringify(item).toLowerCase().includes(q));
   }
 }

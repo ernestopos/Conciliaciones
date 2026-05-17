@@ -1,14 +1,15 @@
-package com.conciliaciones.reconciliation.core.application.usecase.sourcefile;
+package com.conciliaciones.reconciliation.core.application.usecase.sourceFile;
 
 import com.conciliaciones.persistence.jpa.entity.SourceFileEntity;
-import com.conciliaciones.reconciliation.core.application.port.in.ListSourceFilesUseCase;
-import com.conciliaciones.reconciliation.core.application.port.out.sourcefile.SourceFilePersistencePort;
-import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.SourceFileResponse;
+import com.conciliaciones.reconciliation.core.application.port.in.sourceFile.ListSourceFilesUseCase;
+import com.conciliaciones.reconciliation.core.application.port.out.sourceFile.SourceFilePersistencePort;
+import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.sourceFile.SourceFileResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -18,6 +19,7 @@ public class SourceFileService implements ListSourceFilesUseCase {
     private final SourceFilePersistencePort persistencePort;
 
     @Override
+    @Transactional(readOnly = true)
     public Page<SourceFileResponse> list(Pageable pageable) {
         log.info("LOG INICIO X = listSourceFiles page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
         Page<SourceFileResponse> result = persistencePort.findAll(pageable).map(this::toResponse);

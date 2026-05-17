@@ -1,7 +1,7 @@
-package com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.sourcefile;
+package com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.sourceFile;
 
-import com.conciliaciones.reconciliation.core.application.port.in.ListSourceFilesUseCase;
-import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.SourceFileResponse;
+import com.conciliaciones.reconciliation.core.application.port.in.sourceFile.ListSourceFilesUseCase;
+import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.sourceFile.SourceFileResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
