@@ -20,25 +20,18 @@ public class FileUploadConfirmedConsumer {
     private final ObjectMapper objectMapper;
 
     @KafkaListener(topics = "${management-task.kafka.topics.file-upload-confirmed}")
-    public void consume(FileUploadConfirmedEvent event) throws JsonProcessingException {
-        log.info("LOG INICIO X = consume - sourceFileId={}", event.sourceFileId());
-        String payload = objectMapper.writeValueAsString(event);
-
-        /*
-        FileUploadConfirmedEvent event = new FileUploadConfirmedEvent(
-                    sourceFile.getId(),
-                    sourceFile.getBucketName(),
-                    sourceFile.getObjectKey(),
-                    sourceFile.getOriginalFileName(),
-                    "S3_UPLOAD_CONFIRMED"
-            );
-         */
-
-        createScheduledTaskUseCase.create(new CreateScheduledTaskCommand(
-                event.sourceFileId(),
-                TaskType.FILE_DATA_REVIEW,
-                payload,
-                "KAFKA"
-        ));
+    public void consume(String message) {
+        log.info("LOG INICIO X = consume - message={}", message);
+        try {
+            FileUploadConfirmedEvent event = objectMapper.readValue(message,FileUploadConfirmedEvent.class);
+            String payload = objectMapper.writeValueAsString(event);
+            log.info("Evento file-upload-confirmed recibido correctamente - sourceFileId={}, bucket={}, objectKey={}",event.sourceFileId(),event.bucketName(),event.objectKey());
+            createScheduledTaskUseCase.create(new CreateScheduledTaskCommand(event.sourceFileId(),TaskType.FILE_DATA_REVIEW,payload,"KAFKA"));
+            log.info("LOG FIN X = consume - sourceFileId={}", event.sourceFileId());
+        } catch (JsonProcessingException e) {
+            log.error("Error deserializando mensaje Kafka file-upload-confirmed. message={}", message, e);
+        } catch (Exception e) {
+            log.error("Error procesando evento Kafka file-upload-confirmed. message={}", message, e);
+        }
     }
 }
