@@ -36,6 +36,8 @@ public class PipelineTaskExecutorService {
     private final TaskExecutionEventPublisher taskExecutionEventPublisher;
     private final ApplicationContext applicationContext;
 
+    private final PipelineTaskStatusService pipelineTaskStatusService;
+
     @Transactional
     public void execute(Long scheduledTaskId) {
         ScheduledTaskEntity task = scheduledTaskRepository.findById(scheduledTaskId)
@@ -56,19 +58,17 @@ public class PipelineTaskExecutorService {
         try {
             validateSequentialExecution(task);
             publishPlanStatus(task.getExecutionPlanTask(), "Tarea en proceso: " + taskTypeName);
-            markTaskAsProcess(task);
+            pipelineTaskStatusService.markTaskAsProcess(task.getId());
             ScheduledTaskRunnable runnable = applicationContext.getBean(task.getTaskBeanName(), ScheduledTaskRunnable.class);
             runnable.execute(task);
             sleepDemoExecution();
-            markTaskAsExecuted(task);
+            pipelineTaskStatusService.markTaskAsExecuted(task.getId());
             activateNextTaskOrClosePlan(task);
             log.info("LOG FIN X = executePipelineTask - taskId={}, executionPlanTaskId={}, taskType={}",
                     task.getId(), executionPlanTaskId, taskTypeName);
         } catch (Exception ex) {
-            log.error("Error ejecutando tarea. taskId={}, executionPlanTaskId={}, taskType={}",
-                    task.getId(), executionPlanTaskId, taskTypeName, ex);
-            markTaskAsFailed(task, ex.getMessage());
-            markPlanAsFailed(task.getExecutionPlanTask(), ex.getMessage());
+            log.error("Error ejecutando tarea. taskId={}, executionPlanTaskId={}, taskType={}", task.getId(), executionPlanTaskId, taskTypeName, ex);
+            pipelineTaskStatusService.markTaskAsFailed(task.getId());
             publishPlanStatus(task.getExecutionPlanTask(), ex.getMessage());
         }
     }
@@ -119,25 +119,6 @@ public class PipelineTaskExecutorService {
         }
     }
 
-    private void markTaskAsProcess(ScheduledTaskEntity task) {
-        task.setStatus(getParameter(ManagementTaskParameterGroups.SCHEDULED_TASK_STATUS, ManagementTaskStatus.PROCESS));
-        task.setActive(Boolean.TRUE);
-        task.setUpdatedBy(getClass().getSimpleName());
-        scheduledTaskRepository.save(task);
-
-        ExecutionPlanTaskEntity plan = task.getExecutionPlanTask();
-        plan.setStatus(getParameter(ManagementTaskParameterGroups.EXECUTION_PLAN_TASK_STATUS, ManagementTaskStatus.PLAN_EXECUTING));
-        plan.setMessage("Ejecutando tarea: " + task.getTaskType().getName());
-        executionPlanTaskRepository.save(plan);
-    }
-
-    private void markTaskAsExecuted(ScheduledTaskEntity task) {
-        task.setStatus(getParameter(ManagementTaskParameterGroups.SCHEDULED_TASK_STATUS, ManagementTaskStatus.EXECUTED));
-        task.setActive(Boolean.FALSE);
-        task.setUpdatedBy(getClass().getSimpleName());
-        scheduledTaskRepository.save(task);
-    }
-
     private void activateNextTaskOrClosePlan(ScheduledTaskEntity task) {
         TaskDefinition current = TaskDefinition.fromParameterName(task.getTaskType().getName());
         TaskDefinition next = current.next();
@@ -168,26 +149,11 @@ public class PipelineTaskExecutorService {
         publishTaskExecutionRequested(nextTask, "NEXT_TASK_REQUESTED");
     }
 
-    private void markTaskAsFailed(ScheduledTaskEntity task, String message) {
-        task.setStatus(getParameter(ManagementTaskParameterGroups.SCHEDULED_TASK_STATUS, ManagementTaskStatus.FAILED));
-        task.setActive(Boolean.FALSE);
-        task.setUpdatedBy(getClass().getSimpleName());
-        scheduledTaskRepository.save(task);
-    }
-
     private void markPlanAsExecuted(ExecutionPlanTaskEntity plan) {
         plan.setStatus(getParameter(ManagementTaskParameterGroups.EXECUTION_PLAN_TASK_STATUS, ManagementTaskStatus.PLAN_EXECUTED));
         plan.setSuccessful(Boolean.TRUE);
         plan.setFinishedAt(LocalDateTime.now());
         plan.setMessage("Plan de ejecución finalizado correctamente");
-        executionPlanTaskRepository.save(plan);
-    }
-
-    private void markPlanAsFailed(ExecutionPlanTaskEntity plan, String message) {
-        plan.setStatus(getParameter(ManagementTaskParameterGroups.EXECUTION_PLAN_TASK_STATUS, ManagementTaskStatus.PLAN_FAILED));
-        plan.setSuccessful(Boolean.FALSE);
-        plan.setFinishedAt(LocalDateTime.now());
-        plan.setMessage(message);
         executionPlanTaskRepository.save(plan);
     }
 
