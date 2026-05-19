@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -41,6 +43,10 @@ public class ExecutionPlanTaskEntity {
 
     @Column(name = "message", columnDefinition = "TEXT")
     private String message;
+
+    @OneToMany(mappedBy = "executionPlanTask", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = false)
+    @Builder.Default
+    private List<ScheduledTaskEntity> scheduledTasks = new ArrayList<>();
 
     @PrePersist
     void prePersist() {

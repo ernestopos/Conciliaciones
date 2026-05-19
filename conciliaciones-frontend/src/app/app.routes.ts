@@ -5,6 +5,7 @@ import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { LoginPageComponent } from './features/auth/pages/login-page/login-page.component';
 import { SourceFilesPageComponent } from './features/conciliacion/source-files/source-files-page.component';
 import { ProcessingExecutionsPageComponent } from './features/conciliacion/processing-executions/processing-executions-page.component';
+import { ProcessingExecutionDetailPageComponent } from './features/conciliacion/processing-execution-detail/processing-execution-detail-page.component';
 import { DomainPlaceholderComponent } from './features/placeholders/domain-placeholder.component';
 import { CrudEntityPageComponent } from './shared/components/crud-entity-page/crud-entity-page.component';
 import { CrudRouteConfig } from './core/models/crud.models';
@@ -134,6 +135,7 @@ export const routes: Routes = [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'conciliacion/source-files', component: SourceFilesPageComponent },
       { path: 'conciliacion/processing-executions', component: ProcessingExecutionsPageComponent },
+      { path: 'conciliacion/processing-executions/:id', component: ProcessingExecutionDetailPageComponent },
       { path: 'seguridad/usuarios', component: DomainPlaceholderComponent, data: { title: 'Seguridad' } },
       { path: 'maestros/agencias', component: CrudEntityPageComponent, data: { crudConfig: agencyCrudConfig } },
       { path: 'maestros/carriers', component: CrudEntityPageComponent, data: { crudConfig: carrierCrudConfig } },

@@ -1,14 +1,24 @@
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
-import { ProcessingExecutionModel } from '../models/processing-execution.model';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
+import { normalizeCollectionResponse } from '../core/services/api-response.utils';
+import { ProcessingExecutionDetailModel, ProcessingExecutionModel } from '../models/processing-execution.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProcessingExecutionService {
+  private readonly resourceUrl = `${environment.api.core}/execution-plan-tasks`;
+
+  constructor(private readonly http: HttpClient) {}
+
   list(): Observable<ProcessingExecutionModel[]> {
-    return of([
-      { id: 10, sourceFileId: 1, executionId: 'PROC-20260330-001', status: 'COMPLETED', detailMessage: 'Procesamiento finalizado con éxito.' },
-      { id: 11, sourceFileId: 2, executionId: 'PROC-20260330-002', status: 'IN_PROGRESS', detailMessage: 'Validando registros crudos.' }
-    ]).pipe(delay(350));
+    return this.http
+      .get<unknown>(this.resourceUrl)
+      .pipe(map((response) => normalizeCollectionResponse<ProcessingExecutionModel>(response)));
+  }
+
+  getDetail(id: number): Observable<ProcessingExecutionDetailModel> {
+    return this.http.get<ProcessingExecutionDetailModel>(`${this.resourceUrl}/${id}`);
   }
 }

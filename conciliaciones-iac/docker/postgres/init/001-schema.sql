@@ -513,42 +513,58 @@ CREATE TABLE IF NOT EXISTS reconciliation.source_file_traceability (
 );
 
 -- =========================================================
--- 13. SCHEDULED_TASK
--- =========================================================
-
-CREATE TABLE IF NOT EXISTS reconciliation.scheduled_task (
-    id BIGSERIAL PRIMARY KEY,
-    id_task_type BIGINT NOT NULL,
-    id_status BIGINT NOT NULL,
-    cron_expression VARCHAR(80) NOT NULL,
-    task_bean_name VARCHAR(200) NOT NULL,
-	method_name VARCHAR(200) NOT NULL,
-    payload TEXT,
-    active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_by VARCHAR(80) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_by VARCHAR(80),
-    updated_at TIMESTAMP,
-	CONSTRAINT fk_scheduled_task_parameter_task_type FOREIGN KEY (id_task_type) REFERENCES reconciliation.parameter (id),
-	CONSTRAINT fk_scheduled_task_parameter_status FOREIGN KEY (id_status) REFERENCES reconciliation.parameter (id)
-);
-
--- =========================================================
--- 14. execution_plan_task
+-- 13. execution_plan_task
 -- =========================================================
 
 CREATE TABLE IF NOT EXISTS execution_plan_task (
     id BIGSERIAL PRIMARY KEY,
     id_source_file BIGINT NOT NULL,
     id_status BIGINT NOT NULL,
-	plan_execute_code VARCHAR(200) NOT NULL,
-	started_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    plan_execute_code VARCHAR(200) NOT NULL,
+    started_at TIMESTAMP NOT NULL DEFAULT NOW(),
     finished_at TIMESTAMP,
     successful BOOLEAN,
     message TEXT,
-	CONSTRAINT fk_execution_plan_task_source_file FOREIGN KEY (id_source_file) REFERENCES reconciliation.source_file(id),
-	CONSTRAINT fk_execution_plan_task_parameter_status FOREIGN KEY (id_status) REFERENCES reconciliation.parameter (id)
+    created_by VARCHAR(80) NOT NULL DEFAULT 'system',
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_by VARCHAR(80),
+    updated_at TIMESTAMP,
+    CONSTRAINT fk_execution_plan_task_source_file FOREIGN KEY (id_source_file) REFERENCES reconciliation.source_file(id),
+    CONSTRAINT fk_execution_plan_task_parameter_status FOREIGN KEY (id_status) REFERENCES reconciliation.parameter (id),
+    CONSTRAINT uq_execution_plan_task_code UNIQUE (plan_execute_code)
 );
+
+-- =========================================================
+-- 14. SCHEDULED_TASK
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS reconciliation.scheduled_task (
+    id BIGSERIAL PRIMARY KEY,
+    id_execution_plan_task BIGINT NOT NULL,
+    id_task_type BIGINT NOT NULL,
+    id_status BIGINT NOT NULL,
+    task_order INTEGER NOT NULL,
+    cron_expression VARCHAR(80) NOT NULL,
+    task_bean_name VARCHAR(200) NOT NULL,
+    method_name VARCHAR(200) NOT NULL,
+    payload TEXT,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    started_at TIMESTAMP,
+    finished_at TIMESTAMP,
+    successful BOOLEAN,
+    message TEXT,
+    created_by VARCHAR(80) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_by VARCHAR(80),
+    updated_at TIMESTAMP,
+    CONSTRAINT fk_scheduled_task_execution_plan_task FOREIGN KEY (id_execution_plan_task) REFERENCES reconciliation.execution_plan_task(id),
+    CONSTRAINT fk_scheduled_task_parameter_task_type FOREIGN KEY (id_task_type) REFERENCES reconciliation.parameter (id),
+    CONSTRAINT fk_scheduled_task_parameter_status FOREIGN KEY (id_status) REFERENCES reconciliation.parameter (id),
+    CONSTRAINT uq_scheduled_task_plan_order UNIQUE (id_execution_plan_task, task_order),
+    CONSTRAINT uq_scheduled_task_plan_type UNIQUE (id_execution_plan_task, id_task_type)
+);
+
+
 
 -- =========================================================
 -- 15. INDICES
@@ -568,6 +584,30 @@ CREATE INDEX IF NOT EXISTS idx_source_file_carrier_id
 
 CREATE INDEX IF NOT EXISTS idx_source_file_processing_status_id
     ON source_file(processing_status_id);
+
+CREATE INDEX IF NOT EXISTS idx_execution_plan_task_source_file
+    ON execution_plan_task(id_source_file);
+
+CREATE INDEX IF NOT EXISTS idx_execution_plan_task_status
+    ON execution_plan_task(id_status);
+
+CREATE INDEX IF NOT EXISTS idx_execution_plan_task_code
+    ON execution_plan_task(plan_execute_code);
+
+CREATE INDEX IF NOT EXISTS idx_scheduled_task_execution_plan
+    ON scheduled_task(id_execution_plan_task);
+
+CREATE INDEX IF NOT EXISTS idx_scheduled_task_status
+    ON scheduled_task(id_status);
+
+CREATE INDEX IF NOT EXISTS idx_scheduled_task_type
+    ON scheduled_task(id_task_type);
+
+CREATE INDEX IF NOT EXISTS idx_scheduled_task_plan_order
+    ON scheduled_task(id_execution_plan_task, task_order);
+
+CREATE INDEX IF NOT EXISTS idx_scheduled_task_active_status
+    ON scheduled_task(active, id_status);
 
 CREATE INDEX IF NOT EXISTS idx_raw_import_record_file_id
     ON raw_import_record(source_file_id);

@@ -1,6 +1,6 @@
 package com.conciliaciones.msmanagementtask.infrastructure.scheduler;
 
-import com.conciliaciones.domain.task.ScheduledTaskStatus;
+import com.conciliaciones.msmanagementtask.application.constants.ManagementTaskStatus;
 import com.conciliaciones.persistence.jpa.entity.ScheduledTaskEntity;
 import com.conciliaciones.persistence.repository.ScheduledTaskRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,15 +23,15 @@ import java.util.concurrent.ScheduledFuture;
 public class DynamicTaskScheduler {
 
     private final ThreadPoolTaskScheduler taskScheduler;
-    private final ScheduledTaskRepository scheduledTaskRepository;
+    //private final ScheduledTaskRepository scheduledTaskRepository;
     private final ApplicationContext applicationContext;
     private final Map<Long, ScheduledFuture<?>> scheduledFutures = new ConcurrentHashMap<>();
 
     @Scheduled(fixedDelayString = "${management-task.scheduler.refresh-fixed-delay-ms:15000}")
     @Transactional
     public void refreshScheduledTasks() {
-        List<ScheduledTaskEntity> activeTasks = scheduledTaskRepository.findByActiveTrueAndStatusIn(
-                List.of(ScheduledTaskStatus.PENDING, ScheduledTaskStatus.SCHEDULED)
+        /*List<ScheduledTaskEntity> activeTasks = scheduledTaskRepository.findByActiveTrueAndStatus_NameIn(
+                List.of(ManagementTaskStatus.PENDING, ManagementTaskStatus.SCHEDULED)
         );
 
         for (ScheduledTaskEntity task : activeTasks) {
@@ -44,15 +44,18 @@ public class DynamicTaskScheduler {
             boolean stillActive = activeTasks.stream().anyMatch(task -> task.getId().equals(taskId));
             if (!stillActive) {
                 ScheduledFuture<?> future = scheduledFutures.get(taskId);
-                if (future != null) future.cancel(false);
+                if (future != null) {
+                    future.cancel(false);
+                }
                 return true;
             }
             return false;
-        });
+        });*/
     }
 
     private void schedule(ScheduledTaskEntity task) {
-        log.info("Programando tarea. id={}, bean={}, cron={}", task.getId(), task.getTaskBeanName(), task.getCronExpression());
+        /*log.info("Programando tarea. taskId={}, executionPlanTaskId={}, bean={}, cron={}",
+                task.getId(), task.getExecutionPlanTask().getId(), task.getTaskBeanName(), task.getCronExpression());
 
         ScheduledTaskRunnable runnable = applicationContext.getBean(task.getTaskBeanName(), ScheduledTaskRunnable.class);
 
@@ -61,9 +64,6 @@ public class DynamicTaskScheduler {
                 new CronTrigger(task.getCronExpression())
         );
 
-        scheduledFutures.put(task.getId(), future);
-        task.setStatus(ScheduledTaskStatus.SCHEDULED);
-        task.setUpdatedBy("SCHEDULER");
-        scheduledTaskRepository.save(task);
+        scheduledFutures.put(task.getId(), future);*/
     }
 }

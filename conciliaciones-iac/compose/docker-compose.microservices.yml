@@ -114,6 +114,40 @@ services:
       - conciliaciones-shared-net
       - conciliaciones-security-net
 
+
+  ms-management-task:
+    build:
+      context: ../..
+      dockerfile: ms-management-task/Dockerfile
+    image: conciliaciones/ms-management-task:local
+    container_name: ms-management-task
+    restart: unless-stopped
+    ports:
+      - "9094:8084"
+    environment:
+      SERVER_PORT: 8084
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_GROUP_ID: ms-management-task
+      KAFKA_TOPIC_FILE_UPLOAD_CONFIRMED: conciliaciones.file-upload-confirmed
+      KAFKA_TOPIC_EXECUTION_PLAN_STATUS_CHANGED: conciliaciones.pipeline.task.status
+      KAFKA_TOPIC_TASK_EXECUTION_REQUESTED: conciliaciones.pipeline.task.request
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      kafka-init:
+        condition: service_completed_successfully
+    networks:
+      - conciliaciones_net
+      - conciliaciones-messaging-net
+      - conciliaciones-shared-net
+
 networks:
   conciliaciones_net:
     external: false

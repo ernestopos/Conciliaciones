@@ -20,12 +20,19 @@ public class ScheduledTaskEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_execution_plan_task", nullable = false)
+    private ExecutionPlanTaskEntity executionPlanTask;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_task_type", nullable = false)
     private ParameterEntity taskType;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_status", nullable = false)
     private ParameterEntity status;
+
+    @Column(name = "task_order", nullable = false)
+    private Integer taskOrder;
 
     @Column(name = "cron_expression", nullable = false, length = 80)
     private String cronExpression;
