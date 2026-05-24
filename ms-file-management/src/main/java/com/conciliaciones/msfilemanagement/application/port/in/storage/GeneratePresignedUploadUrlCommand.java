@@ -4,6 +4,7 @@ public record GeneratePresignedUploadUrlCommand(
         String bucketName,
         String fileName,
         String contentType,
+        Long carrierId,
         String folder,
         boolean createBucketPerUpload
 ) {

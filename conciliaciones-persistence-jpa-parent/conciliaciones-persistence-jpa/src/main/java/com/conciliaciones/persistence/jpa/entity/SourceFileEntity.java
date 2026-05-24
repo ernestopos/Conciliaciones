@@ -1,7 +1,10 @@
 package com.conciliaciones.persistence.jpa.entity;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -42,6 +45,16 @@ public class SourceFileEntity {
 
     @Column(name="checksum_sha256",length=128)
     private String checksum;
+
+    @Column(name="delimiter", nullable=false, length=5)
+    private String delimiter = "|";
+
+    @Column(name="detected_columns")
+    private Integer detectedColumns;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name="detected_headers", columnDefinition="jsonb")
+    private JsonNode detectedHeaders;
 
     @Column(name="source_system",length=100)
     private String sourceSystem;

@@ -125,6 +125,9 @@ CREATE TABLE IF NOT EXISTS source_file (
     s3_bucket            VARCHAR(255),
     s3_key               VARCHAR(500),
     checksum_sha256      VARCHAR(128),
+    delimiter            VARCHAR(5) NOT NULL DEFAULT '|',
+    detected_columns     INTEGER,
+    detected_headers     JSONB,
     source_system        VARCHAR(100),
     upload_date          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     uploaded_by          VARCHAR(100),
@@ -140,8 +143,53 @@ CREATE TABLE IF NOT EXISTS source_file (
     CONSTRAINT fk_source_file_carrier
         FOREIGN KEY (carrier_id) REFERENCES carrier(id),
     CONSTRAINT fk_source_file_processing_status
-        FOREIGN KEY (processing_status_id) REFERENCES parameter(id)
+        FOREIGN KEY (processing_status_id) REFERENCES parameter(id),
+    CONSTRAINT ck_source_file_delimiter_pipe
+        CHECK (delimiter = '|'),
+    CONSTRAINT ck_source_file_detected_columns
+        CHECK (detected_columns IS NULL OR detected_columns > 0)
 );
+
+
+-- Ajustes para cargue CSV delimitado por pipe (|).
+-- SOURCE_FILE representa cada archivo cargado/lote de procesamiento.
+-- SOURCE_FILE_SHEET se conserva y para CSV se debe crear un único registro técnico con sheet_name = 'CSV_DATA'.
+ALTER TABLE source_file
+    ADD COLUMN IF NOT EXISTS delimiter VARCHAR(5) NOT NULL DEFAULT '|';
+
+ALTER TABLE source_file
+    ADD COLUMN IF NOT EXISTS detected_columns INTEGER;
+
+ALTER TABLE source_file
+    ADD COLUMN IF NOT EXISTS detected_headers JSONB;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'ck_source_file_delimiter_pipe'
+          AND conrelid = 'reconciliation.source_file'::regclass
+    ) THEN
+        ALTER TABLE source_file
+            ADD CONSTRAINT ck_source_file_delimiter_pipe
+            CHECK (delimiter = '|');
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'ck_source_file_detected_columns'
+          AND conrelid = 'reconciliation.source_file'::regclass
+    ) THEN
+        ALTER TABLE source_file
+            ADD CONSTRAINT ck_source_file_detected_columns
+            CHECK (detected_columns IS NULL OR detected_columns > 0);
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS source_file_sheet (
     id                  BIGSERIAL PRIMARY KEY,
@@ -249,7 +297,6 @@ CREATE TABLE IF NOT EXISTS policy_status_history (
 -- =========================================================
 -- 6. ASIGNACION DE COMISIONES
 -- =========================================================
-
 CREATE TABLE IF NOT EXISTS commission_assignment (
     id                  BIGSERIAL PRIMARY KEY,
     policy_id           BIGINT NOT NULL,
@@ -276,7 +323,6 @@ CREATE TABLE IF NOT EXISTS commission_assignment (
 -- =========================================================
 -- 7. REGISTROS DE COMISION / NORMALIZADOS
 -- =========================================================
-
 CREATE TABLE IF NOT EXISTS commission_statement (
     id                   BIGSERIAL PRIMARY KEY,
     source_file_id       BIGINT NOT NULL,
@@ -349,7 +395,6 @@ CREATE TABLE IF NOT EXISTS commission_statement_item (
 -- =========================================================
 -- 8. REGLAS
 -- =========================================================
-
 CREATE TABLE IF NOT EXISTS commission_rule (
     id                  BIGSERIAL PRIMARY KEY,
     carrier_id          BIGINT,
@@ -379,7 +424,6 @@ CREATE TABLE IF NOT EXISTS commission_rule (
 -- =========================================================
 -- 9. CASOS DE RECONCILIACION
 -- =========================================================
-
 CREATE TABLE IF NOT EXISTS reconciliation_case (
     id                           BIGSERIAL PRIMARY KEY,
     source_file_id               BIGINT NOT NULL,
@@ -424,7 +468,6 @@ CREATE TABLE IF NOT EXISTS reconciliation_case (
 -- =========================================================
 -- 10. LIQUIDACION / PAGOS
 -- =========================================================
-
 CREATE TABLE IF NOT EXISTS commission_payment (
     id                  BIGSERIAL PRIMARY KEY,
     producer_id         BIGINT NOT NULL,
@@ -479,7 +522,6 @@ CREATE TABLE IF NOT EXISTS commission_payment_detail (
 -- =========================================================
 -- 11. AUDITORIA
 -- =========================================================
-
 CREATE TABLE IF NOT EXISTS audit_log (
     id                  BIGSERIAL PRIMARY KEY,
     entity_name         VARCHAR(150) NOT NULL,
@@ -497,7 +539,6 @@ CREATE TABLE IF NOT EXISTS audit_log (
 -- =========================================================
 -- 12. SOURCE_FILE_TRACEABILITY
 -- =========================================================
-
 CREATE TABLE IF NOT EXISTS reconciliation.source_file_traceability (
     id BIGSERIAL PRIMARY KEY,
     source_file_id BIGINT NOT NULL,
@@ -515,7 +556,6 @@ CREATE TABLE IF NOT EXISTS reconciliation.source_file_traceability (
 -- =========================================================
 -- 13. execution_plan_task
 -- =========================================================
-
 CREATE TABLE IF NOT EXISTS execution_plan_task (
     id BIGSERIAL PRIMARY KEY,
     id_source_file BIGINT NOT NULL,
@@ -537,7 +577,6 @@ CREATE TABLE IF NOT EXISTS execution_plan_task (
 -- =========================================================
 -- 14. SCHEDULED_TASK
 -- =========================================================
-
 CREATE TABLE IF NOT EXISTS reconciliation.scheduled_task (
     id BIGSERIAL PRIMARY KEY,
     id_execution_plan_task BIGINT NOT NULL,
@@ -569,7 +608,6 @@ CREATE TABLE IF NOT EXISTS reconciliation.scheduled_task (
 -- =========================================================
 -- 15. INDICES
 -- =========================================================
-
 CREATE INDEX IF NOT EXISTS idx_agency_carrier_id
     ON agency(carrier_id);
 
@@ -578,6 +616,10 @@ CREATE INDEX IF NOT EXISTS idx_producer_agency_id
 
 CREATE INDEX IF NOT EXISTS idx_client_full_name
     ON client(full_name);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_source_file_checksum_sha256
+    ON source_file(checksum_sha256)
+    WHERE checksum_sha256 IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_source_file_carrier_id
     ON source_file(carrier_id);
@@ -734,18 +776,6 @@ CREATE INDEX IF NOT EXISTS idx_execution_plan_task_source_file
 
 CREATE INDEX IF NOT EXISTS idx_execution_plan_task_status 
     ON reconciliation.execution_plan_task(id_status);
-
--- =========================================================
--- 13. DATOS SEMILLA - CARRIER
--- =========================================================
-
-INSERT INTO carrier (code, name, description, created_by)
-VALUES
-    ('ELITE', 'ELITE', 'Fuente de datos ELITE', 'system'),
-    ('SENTARA', 'SENTARA', 'Fuente de datos SENTARA', 'system'),
-    ('SAFEGUARD', 'SAFEGUARD', 'Fuente de datos SAFEGUARD', 'system'),
-    ('UNITED_H_ONE', 'UNITED H ONE', 'Fuente de datos UNITED H ONE', 'system')
-ON CONFLICT (code) DO NOTHING;
 
 -- =========================================================
 -- 14. DATOS SEMILLA - PARAMETER (IDS FIJOS)
@@ -980,25 +1010,3 @@ active = EXCLUDED.active,
 sort_order = EXCLUDED.sort_order,
 updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
-
-
-
--- =========================================================
--- 15. COMENTARIOS
--- =========================================================
--- Convencion oficial:
---   parameter.name  = codigo tecnico
---   parameter.value = texto visible en UI
---
--- Ejemplo de consulta para backend:
---   SELECT id
---   FROM parameter
---   WHERE parameter_group = 'SOURCE_FILE_STATUS'
---     AND name = 'PROCESSED';
---
--- Ejemplo de consulta para combos:
---   SELECT id, name, value
---   FROM parameter
---   WHERE parameter_group = 'PAYMENT_STATUS'
---     AND active = TRUE
---   ORDER BY sort_order;

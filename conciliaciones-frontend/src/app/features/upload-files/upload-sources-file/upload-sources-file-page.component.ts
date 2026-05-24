@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpEventType } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -8,10 +8,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { PresignedUploadResponse } from '../../../models/upload-source-file.model';
 import { UploadSourceFileService } from '../../../services/upload-source-file.service';
+import { Carrier } from '../../../models/carrier.model';
+import { CarrierService } from '../../../services/carrier.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 @Component({
@@ -25,14 +28,19 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatSelectModule,
     MatSnackBarModule,
     PageHeaderComponent
   ],
   templateUrl: 'upload-sources-file-page.component.html',
   styleUrl: 'upload-sources-file-page.component.scss'
 })
-export class UploadSourcesFilePageComponent {
+export class UploadSourcesFilePageComponent implements OnInit {
+  private static readonly ALLOWED_FILE_EXTENSION = '.csv';
+
   selectedFile: File | null = null;
+  selectedCarrierId: number | null = null;
+  carriers: Carrier[] = [];
   folder = '';
   uploadInProgress = false;
   progress = 0;
@@ -42,24 +50,65 @@ export class UploadSourcesFilePageComponent {
 
   constructor(
     private readonly uploadService: UploadSourceFileService,
+    private readonly carrierService: CarrierService,
     private readonly snackBar: MatSnackBar
   ) {}
 
+  ngOnInit(): void {
+    this.loadCarriers();
+  }
+
+
+  private loadCarriers(): void {
+    this.carrierService.list().subscribe({
+      next: (response) => {
+        this.carriers = response.filter((carrier) => carrier.active);
+      },
+      error: () => {
+        this.handleError('No fue posible cargar el listado de carriers.');
+      }
+    });
+  }
+
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.selectedFile = input.files?.[0] ?? null;
+    const file = input.files?.[0] ?? null;
+
     this.resetUploadState();
+
+    if (!file) {
+      this.selectedFile = null;
+      return;
+    }
+
+    if (!this.isCsvFile(file)) {
+      this.selectedFile = null;
+      input.value = '';
+      this.handleError('Solo se permite cargar archivos .csv separados por pipe (|).');
+      return;
+    }
+
+    this.selectedFile = file;
   }
 
   upload(): void {
-    if (!this.selectedFile || this.uploadInProgress) {
+    if (!this.selectedFile || !this.selectedCarrierId || this.uploadInProgress) {
+      return;
+    }
+
+    if (!this.isCsvFile(this.selectedFile)) {
+      this.handleError('Solo se permite cargar archivos .csv separados por pipe (|).');
       return;
     }
 
     this.resetUploadState();
     this.uploadInProgress = true;
 
-    this.uploadService.generatePresignedUrl(this.selectedFile, this.folder).subscribe({
+    this.uploadService.generatePresignedUrl(
+      this.selectedFile,
+      this.selectedCarrierId,
+      this.folder
+    ).subscribe({
       next: (response: PresignedUploadResponse) => {
         this.uploadInfo = response;
         this.startUpload(response, this.selectedFile as File);
@@ -135,6 +184,13 @@ export class UploadSourcesFilePageComponent {
           this.handleError(message);
         }
       });
+  }
+
+  private isCsvFile(file: File): boolean {
+    return file.name
+      .trim()
+      .toLowerCase()
+      .endsWith(UploadSourcesFilePageComponent.ALLOWED_FILE_EXTENSION);
   }
 
   getProgressColor(): string {

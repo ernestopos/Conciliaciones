@@ -62,6 +62,7 @@ public class StorageController {
                         request.bucketName(),
                         request.fileName(),
                         request.contentType(),
+                        request.carrierId(),
                         request.folder(),
                         request.createBucketPerUpload()
                 )
