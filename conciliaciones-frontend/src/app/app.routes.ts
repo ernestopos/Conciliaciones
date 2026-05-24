@@ -10,16 +10,31 @@ import { DomainPlaceholderComponent } from './features/placeholders/domain-place
 import { CrudEntityPageComponent } from './shared/components/crud-entity-page/crud-entity-page.component';
 import { CrudRouteConfig } from './core/models/crud.models';
 import { UploadSourcesFilePageComponent } from './features/upload-files/upload-sources-file/upload-sources-file-page.component';
+import { AuditLogsPageComponent } from './features/auditoria/audit-logs/audit-logs-page.component';
 
 const agencyCrudConfig: CrudRouteConfig = {
   resourceKey: 'agencies',
   title: 'Agencias',
   subtitle: 'Administración de agencias del módulo de conciliaciones.',
   createLabel: 'Nueva agencia',
-  columns: ['id', 'carrierId', 'externalAgencyId', 'name', 'active'],
-  headers: { id: 'ID', carrierId: 'Carrier', externalAgencyId: 'ID externo', name: 'Nombre', active: 'Activo' },
+  columns: ['id', 'carrierName', 'externalAgencyId', 'name', 'active'],
+  headers: { id: 'ID', carrierName: 'Carrier', externalAgencyId: 'ID externo', name: 'Nombre', active: 'Activo' },
   fields: [
-    { key: 'carrierId', label: 'Carrier ID', type: 'number' },
+    {
+      key: 'carrierId',
+      label: 'Carrier',
+      type: 'lookup',
+      required: true,
+      displayKey: 'carrierName',
+      lookup: {
+        resourceKey: 'carriers',
+        valueKey: 'id',
+        displayKey: 'name',
+        title: 'Buscar carrier',
+        columns: ['id', 'code', 'name', 'active'],
+        headers: { id: 'ID', code: 'Código', name: 'Nombre', active: 'Activo' }
+      }
+    },
     { key: 'externalAgencyId', label: 'ID externo' },
     { key: 'name', label: 'Nombre', required: true },
     { key: 'active', label: 'Activo', type: 'checkbox' }
@@ -98,6 +113,80 @@ const parameterCrudConfig: CrudRouteConfig = {
   ]
 };
 
+
+const policyCrudConfig: CrudRouteConfig = {
+  resourceKey: 'policies',
+  title: 'Pólizas',
+  subtitle: 'Administración de pólizas del módulo de conciliaciones.',
+  createLabel: 'Nueva póliza',
+  columns: ['id', 'carrierName', 'clientName', 'policyNumber', 'subscriberId', 'statusName', 'active'],
+  headers: {
+    id: 'ID',
+    carrierName: 'Carrier',
+    clientName: 'Cliente',
+    policyNumber: 'Número póliza',
+    subscriberId: 'Subscriber ID',
+    statusName: 'Estado',
+    active: 'Activo'
+  },
+  fields: [
+    {
+      key: 'carrierId',
+      label: 'Carrier',
+      type: 'lookup',
+      required: true,
+      displayKey: 'carrierName',
+      lookup: {
+        resourceKey: 'carriers',
+        valueKey: 'id',
+        displayKey: 'name',
+        title: 'Buscar carrier',
+        columns: ['id', 'code', 'name', 'active'],
+        headers: { id: 'ID', code: 'Código', name: 'Nombre', active: 'Activo' }
+      }
+    },
+    {
+      key: 'clientId',
+      label: 'Cliente',
+      type: 'lookup',
+      displayKey: 'clientName',
+      lookup: {
+        resourceKey: 'clients',
+        valueKey: 'id',
+        displayKey: 'fullName',
+        title: 'Buscar cliente',
+        columns: ['id', 'externalClientId', 'fullName', 'state', 'active'],
+        headers: { id: 'ID', externalClientId: 'ID externo', fullName: 'Nombre completo', state: 'Estado', active: 'Activo' }
+      }
+    },
+    { key: 'policyNumber', label: 'Número póliza', required: true },
+    { key: 'subscriberId', label: 'Subscriber ID' },
+    { key: 'effectiveDate', label: 'Fecha vigencia', type: 'date' },
+    { key: 'issueDate', label: 'Fecha emisión', type: 'date' },
+    { key: 'terminationDate', label: 'Fecha terminación', type: 'date' },
+    {
+      key: 'statusId',
+      label: 'Estado',
+      type: 'lookup',
+      required: true,
+      displayKey: 'statusName',
+      lookup: {
+        resourceKey: 'parameters',
+        valueKey: 'id',
+        displayKey: 'name',
+        title: 'Buscar estado de póliza',
+        columns: ['id', 'name', 'parameterGroup', 'value', 'active'],
+        headers: { id: 'ID', name: 'Nombre', parameterGroup: 'Grupo', value: 'Valor', active: 'Activo' }
+      }
+    },
+    { key: 'residentState', label: 'Estado residencia' },
+    { key: 'issueState', label: 'Estado emisión' },
+    { key: 'membersCount', label: 'Cantidad miembros', type: 'number' },
+    { key: 'sourceKey', label: 'Llave origen' },
+    { key: 'active', label: 'Activo', type: 'checkbox' }
+  ]
+};
+
 const reconciliationCaseCrudConfig: CrudRouteConfig = {
   resourceKey: 'reconciliation-cases',
   title: 'Casos de conciliación',
@@ -142,11 +231,12 @@ export const routes: Routes = [
       { path: 'maestros/clientes', component: CrudEntityPageComponent, data: { crudConfig: clientCrudConfig } },
       { path: 'maestros/productores', component: CrudEntityPageComponent, data: { crudConfig: producerCrudConfig } },
       { path: 'maestros/parametros', component: CrudEntityPageComponent, data: { crudConfig: parameterCrudConfig } },
+      { path: 'maestros/polizas', component: CrudEntityPageComponent, data: { crudConfig: policyCrudConfig } },
       { path: 'maestros/estados-poliza', component: DomainPlaceholderComponent, data: { title: 'Estados de Póliza' } },
       { path: 'maestros/reglas-comision', component: DomainPlaceholderComponent, data: { title: 'Reglas de Comisión' } },
       { path: 'conciliacion/casos', component: CrudEntityPageComponent, data: { crudConfig: reconciliationCaseCrudConfig } },
       { path: 'pagos/liquidaciones', component: DomainPlaceholderComponent, data: { title: 'Pagos / Liquidaciones' } },
-      { path: 'auditoria/registros', component: DomainPlaceholderComponent, data: { title: 'Auditoría' } },
+      { path: 'auditoria/registros', component: AuditLogsPageComponent },
       { path: 'reportes', component: DomainPlaceholderComponent, data: { title: 'Reportes' } },
       { path: 'upload-files/upload-sources-file',  component: UploadSourcesFilePageComponent },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' }

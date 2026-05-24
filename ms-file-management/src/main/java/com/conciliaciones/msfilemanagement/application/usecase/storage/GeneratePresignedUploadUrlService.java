@@ -19,7 +19,6 @@ import java.time.OffsetDateTime;
 @RequiredArgsConstructor
 public class GeneratePresignedUploadUrlService implements GeneratePresignedUploadUrlUseCase {
 
-    private static final Long DEFAULT_CARRIER_ID = 1L;
     private static final String DEFAULT_USER = "SYSTEM";
 
     private final ObjectStoragePort objectStoragePort;
@@ -35,6 +34,9 @@ public class GeneratePresignedUploadUrlService implements GeneratePresignedUploa
         if (command.contentType() == null || command.contentType().isBlank()) {
             throw new BusinessException("El contentType es obligatorio");
         }
+        if (command.carrierId() == null) {
+            throw new BusinessException("El carrier es obligatorio para generar la URL prefirmada");
+        }
 
         String bucketName = resolveBucket(command);
         if (!objectStoragePort.bucketExists(bucketName)) {
@@ -45,7 +47,7 @@ public class GeneratePresignedUploadUrlService implements GeneratePresignedUploa
         String presignedUrl = objectStoragePort.generatePresignedUploadUrl(bucketName, objectKey, command.contentType());
 
         SourceFile savedSourceFile = sourceFilePersistencePort.save(SourceFile.builder()
-                .clientId(DEFAULT_CARRIER_ID)
+                .clientId(command.carrierId())
                 .originalFileName(command.fileName().trim())
                 .storagePath("s3://" + bucketName + "/" + objectKey)
                 .mimeType(command.contentType())

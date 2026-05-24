@@ -1,6 +1,6 @@
 <app-page-header
   title="Upload sources file"
-  subtitle="Cargue asíncrono de archivos fuente usando URL prefirmada del ms-file-management."
+  subtitle="Cargue asíncrono de archivos fuente CSV usando URL prefirmada del ms-file-management."
 />
 
 <div class="upload-page">
@@ -8,12 +8,29 @@
     <mat-card-header>
       <mat-card-title>Cargar archivo a AWS S3</mat-card-title>
       <mat-card-subtitle>
-        Selecciona el archivo y ejecuta el cargue asíncrono.
+        Selecciona únicamente archivos .csv separados por pipe (|) y ejecuta el cargue asíncrono.
       </mat-card-subtitle>
     </mat-card-header>
 
     <mat-card-content>
       <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Carrier</mat-label>
+          <mat-select
+            [(ngModel)]="selectedCarrierId"
+            [disabled]="uploadInProgress"
+          >
+            <mat-option [value]="null">Seleccione un carrier</mat-option>
+            <mat-option
+              *ngFor="let carrier of carriers"
+              [value]="carrier.id"
+            >
+              {{ carrier.name }}
+            </mat-option>
+          </mat-select>
+          <mat-hint>Carrier asociado al archivo CSV.</mat-hint>
+        </mat-form-field>
+
         <div class="file-picker">
           <button
             mat-stroked-button
@@ -29,6 +46,7 @@
           <input
             #fileInput
             type="file"
+            accept=".csv,text/csv"
             hidden
             (change)="onFileSelected($event)"
           />
@@ -40,7 +58,7 @@
           </div>
 
           <ng-template #noFileSelected>
-            <span class="helper-text">No has seleccionado ningún archivo.</span>
+            <span class="helper-text">No has seleccionado ningún archivo. Solo se permiten archivos .csv separados por pipe (|).</span>
           </ng-template>
         </div>
 
@@ -62,7 +80,7 @@
           color="primary"
           type="button"
           (click)="upload()"
-          [disabled]="!selectedFile || uploadInProgress"
+          [disabled]="!selectedFile || !selectedCarrierId || uploadInProgress"
         >
           <mat-icon>cloud_upload</mat-icon>
           {{ uploadInProgress ? 'Cargando...' : 'Subir archivo' }}

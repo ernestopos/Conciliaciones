@@ -17,11 +17,16 @@ export class UploadSourceFileService {
 
   constructor(private readonly http: HttpClient) {}
 
-  generatePresignedUrl(file: File, folder?: string): Observable<PresignedUploadResponse> {
+  generatePresignedUrl(
+    file: File,
+    carrierId: number,
+    folder?: string
+  ): Observable<PresignedUploadResponse> {
     return this.http.post<PresignedUploadResponse>(`${this.storageUrl}/presigned-url`, {
       fileName: file.name,
-      contentType: file.type || 'application/octet-stream',
+      contentType: file.type || 'text/csv',
       folder: folder?.trim() || null,
+      carrierId,
       createBucketPerUpload: true
     });
   }
