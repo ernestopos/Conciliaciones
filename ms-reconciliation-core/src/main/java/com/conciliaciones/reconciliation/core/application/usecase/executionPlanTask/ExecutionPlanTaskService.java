@@ -5,11 +5,13 @@ import com.conciliaciones.persistence.jpa.entity.ExecutionPlanTaskEntity;
 import com.conciliaciones.persistence.jpa.entity.ScheduledTaskEntity;
 import com.conciliaciones.persistence.jpa.entity.SourceFileEntity;
 import com.conciliaciones.reconciliation.core.application.port.in.executionPlanTask.GetExecutionPlanTaskDetailUseCase;
+import com.conciliaciones.reconciliation.core.application.port.in.executionPlanTask.GetValidationExecutionDetailUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.executionPlanTask.ListExecutionPlanTasksUseCase;
 import com.conciliaciones.reconciliation.core.application.port.out.executionPlanTask.ExecutionPlanTaskPersistencePort;
 import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.executionPlanTask.ExecutionPlanTaskDetailResponse;
 import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.executionPlanTask.ExecutionPlanTaskResponse;
 import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.executionPlanTask.ScheduledTaskStepResponse;
+import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.executionPlanTask.ValidationExecutionDetailResponse;
 import com.conciliaciones.reconciliation.core.infrastructure.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +26,7 @@ import java.util.List;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class ExecutionPlanTaskService implements ListExecutionPlanTasksUseCase, GetExecutionPlanTaskDetailUseCase {
+public class ExecutionPlanTaskService implements ListExecutionPlanTasksUseCase, GetExecutionPlanTaskDetailUseCase, GetValidationExecutionDetailUseCase {
 
     private final ExecutionPlanTaskPersistencePort persistencePort;
 
@@ -45,6 +47,31 @@ public class ExecutionPlanTaskService implements ListExecutionPlanTasksUseCase, 
                 .orElseThrow(() -> new ResourceNotFoundException("Plan de ejecución no encontrado con id: " + id));
         ExecutionPlanTaskDetailResponse response = toDetailResponse(entity);
         log.info("LOG FIN X = getExecutionPlanTaskDetail id={} totalTasks={}", id, response.tasks().size());
+        return response;
+    }
+
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ValidationExecutionDetailResponse> getValidationDetail(Long executionPlanTaskId) {
+        log.info("LOG INICIO X = getValidationExecutionDetail executionPlanTaskId={}", executionPlanTaskId);
+        if (persistencePort.findByIdWithScheduledTasks(executionPlanTaskId).isEmpty()) {
+            throw new ResourceNotFoundException("Plan de ejecución no encontrado con id: " + executionPlanTaskId);
+        }
+        List<ValidationExecutionDetailResponse> response = persistencePort
+                .findValidationDetailByExecutionPlanTaskId(executionPlanTaskId)
+                .stream()
+                .map(item -> new ValidationExecutionDetailResponse(
+                        item.getStartedAt(),
+                        item.getFinishedAt(),
+                        item.getSuccessful(),
+                        item.getMessage(),
+                        item.getValidationTypeDescription(),
+                        item.getValidationStatusDescription()
+                ))
+                .toList();
+        log.info("LOG FIN X = getValidationExecutionDetail executionPlanTaskId={} total={}", executionPlanTaskId, response.size());
         return response;
     }
 

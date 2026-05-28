@@ -180,6 +180,63 @@ CREATE TABLE IF NOT EXISTS raw_import_record (
     CONSTRAINT uq_raw_import_record UNIQUE (source_file_id, row_number)
 );
 
+
+-- =========================================================
+-- 4.1 PLAN MAESTRO DE VALIDACION DE ARCHIVO / START_VALIDATE_DATA
+-- =========================================================
+CREATE TABLE IF NOT EXISTS reconciliation.validation_source_plan (
+    id              BIGSERIAL PRIMARY KEY,
+    source_file_id  BIGINT NOT NULL,
+    status_id       BIGINT NOT NULL,
+    started_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    finished_at     TIMESTAMP,
+    successful      BOOLEAN,
+    message         TEXT,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by      VARCHAR(100),
+    updated_at      TIMESTAMP,
+    updated_by      VARCHAR(100),
+    CONSTRAINT fk_validation_source_plan_source_file
+        FOREIGN KEY (source_file_id)
+        REFERENCES reconciliation.source_file(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_validation_source_plan_status
+        FOREIGN KEY (status_id)
+        REFERENCES reconciliation.parameter(id)
+);
+
+-- =========================================================
+-- 4.2 RESULTADO DE VALIDACIONES DE ARCHIVO / START_VALIDATE_DATA
+-- =========================================================
+CREATE TABLE IF NOT EXISTS reconciliation.source_file_validation (
+    id                        BIGSERIAL PRIMARY KEY,
+    validation_source_plan_id BIGINT NOT NULL,
+    raw_import_record_id      BIGINT,
+    validation_type_id        BIGINT NOT NULL,
+    validation_status_id      BIGINT NOT NULL,
+    row_number                INTEGER,
+    column_name               VARCHAR(150),
+    field_value               TEXT,
+    message                   VARCHAR(2000) NOT NULL,
+    technical_detail          TEXT,
+    created_at                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by                VARCHAR(100),
+    CONSTRAINT fk_source_file_validation_plan
+        FOREIGN KEY (validation_source_plan_id)
+        REFERENCES reconciliation.validation_source_plan(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_source_file_validation_raw_import_record
+        FOREIGN KEY (raw_import_record_id)
+        REFERENCES reconciliation.raw_import_record(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_source_file_validation_type
+        FOREIGN KEY (validation_type_id)
+        REFERENCES reconciliation.parameter(id),
+    CONSTRAINT fk_source_file_validation_status
+        FOREIGN KEY (validation_status_id)
+        REFERENCES reconciliation.parameter(id)
+);
+
 -- =========================================================
 -- 5. POLIZAS Y MODELO CANONICO
 -- =========================================================
@@ -621,6 +678,40 @@ CREATE INDEX IF NOT EXISTS idx_raw_import_record_parse_status_id
 CREATE INDEX IF NOT EXISTS idx_raw_import_record_payload_gin
     ON raw_import_record USING GIN(raw_payload);
 
+
+CREATE INDEX IF NOT EXISTS idx_validation_source_plan_source_file_id
+    ON reconciliation.validation_source_plan(source_file_id);
+
+CREATE INDEX IF NOT EXISTS idx_validation_source_plan_status_id
+    ON reconciliation.validation_source_plan(status_id);
+
+CREATE INDEX IF NOT EXISTS idx_validation_source_plan_successful
+    ON reconciliation.validation_source_plan(successful);
+
+CREATE INDEX IF NOT EXISTS idx_validation_source_plan_started_at
+    ON reconciliation.validation_source_plan(started_at);
+
+CREATE INDEX IF NOT EXISTS idx_validation_source_plan_source_file_status
+    ON reconciliation.validation_source_plan(source_file_id, status_id);
+
+CREATE INDEX IF NOT EXISTS idx_source_file_validation_plan_id
+    ON reconciliation.source_file_validation(validation_source_plan_id);
+
+CREATE INDEX IF NOT EXISTS idx_source_file_validation_raw_import_record_id
+    ON reconciliation.source_file_validation(raw_import_record_id);
+
+CREATE INDEX IF NOT EXISTS idx_source_file_validation_type_id
+    ON reconciliation.source_file_validation(validation_type_id);
+
+CREATE INDEX IF NOT EXISTS idx_source_file_validation_status_id
+    ON reconciliation.source_file_validation(validation_status_id);
+
+CREATE INDEX IF NOT EXISTS idx_source_file_validation_row_number
+    ON reconciliation.source_file_validation(row_number);
+
+CREATE INDEX IF NOT EXISTS idx_source_file_validation_column_name
+    ON reconciliation.source_file_validation(column_name);
+
 CREATE INDEX IF NOT EXISTS idx_policy_carrier_id
     ON policy(carrier_id);
 
@@ -982,23 +1073,87 @@ updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
 
 
+-- GROUP: SOURCE_FILE_VALIDATION_TYPE (91 - 103)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+VALUES
+(91,'FILE_EXISTS','Valida que el archivo exista en el repositorio S3','Archivo Existe','SOURCE_FILE_VALIDATION_TYPE',TRUE,1,'system'),
+(92,'FILE_EXTENSION','Valida que la extensión del archivo sea CSV','Extensión Archivo','SOURCE_FILE_VALIDATION_TYPE',TRUE,2,'system'),
+(93,'FILE_NOT_EMPTY','Valida que el archivo no esté vacío','Archivo No Vacío','SOURCE_FILE_VALIDATION_TYPE',TRUE,3,'system'),
+(94,'FILE_DELIMITER','Valida que el separador del archivo sea pipe','Separador Archivo','SOURCE_FILE_VALIDATION_TYPE',TRUE,4,'system'),
+(95,'HEADER_EXISTS','Valida que el archivo tenga encabezado','Encabezado Existe','SOURCE_FILE_VALIDATION_TYPE',TRUE,5,'system'),
+(96,'HEADER_STRUCTURE','Valida que el encabezado tenga las columnas esperadas','Estructura Encabezado','SOURCE_FILE_VALIDATION_TYPE',TRUE,6,'system'),
+(97,'REQUIRED_FIELD','Valida campos obligatorios por fila','Campo Obligatorio','SOURCE_FILE_VALIDATION_TYPE',TRUE,7,'system'),
+(98,'COLUMN_COUNT','Valida que la fila tenga la cantidad esperada de columnas','Cantidad Columnas','SOURCE_FILE_VALIDATION_TYPE',TRUE,8,'system'),
+(99,'EMPTY_ROW','Valida filas vacías','Fila Vacía','SOURCE_FILE_VALIDATION_TYPE',TRUE,9,'system'),
+(100,'INVALID_NUMBER','Valida campos numéricos','Número Inválido','SOURCE_FILE_VALIDATION_TYPE',TRUE,10,'system'),
+(101,'INVALID_DATE','Valida campos de fecha','Fecha Inválida','SOURCE_FILE_VALIDATION_TYPE',TRUE,11,'system'),
+(102,'UNKNOWN_COLUMN','Valida columnas no esperadas','Columna Desconocida','SOURCE_FILE_VALIDATION_TYPE',TRUE,12,'system'),
+(103,'DUPLICATED_FILE','Valida duplicidad del archivo por checksum','Archivo Duplicado','SOURCE_FILE_VALIDATION_TYPE',TRUE,13,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;
 
--- =========================================================
--- 15. COMENTARIOS
--- =========================================================
--- Convencion oficial:
---   parameter.name  = codigo tecnico
---   parameter.value = texto visible en UI
---
--- Ejemplo de consulta para backend:
---   SELECT id
---   FROM parameter
---   WHERE parameter_group = 'SOURCE_FILE_STATUS'
---     AND name = 'PROCESSED';
---
--- Ejemplo de consulta para combos:
---   SELECT id, name, value
---   FROM parameter
---   WHERE parameter_group = 'PAYMENT_STATUS'
---     AND active = TRUE
---   ORDER BY sort_order;
+-- GROUP: SOURCE_FILE_VALIDATION_STATUS (104 - 106)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+VALUES
+(104,'SUCCESS','Validación ejecutada correctamente','Exitoso','SOURCE_FILE_VALIDATION_STATUS',TRUE,1,'system'),
+(105,'WARNING','Validación ejecutada con advertencia','Advertencia','SOURCE_FILE_VALIDATION_STATUS',TRUE,2,'system'),
+(106,'ERROR','Validación ejecutada con error','Error','SOURCE_FILE_VALIDATION_STATUS',TRUE,3,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;
+
+-- GROUP: VALIDATION_SOURCE_PLAN_STATUS (107 - 110)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+VALUES
+(107,'PENDING','Plan de validación pendiente por iniciar','Pendiente','VALIDATION_SOURCE_PLAN_STATUS',TRUE,1,'system'),
+(108,'PROCESS','Plan de validación en procesamiento','Proceso','VALIDATION_SOURCE_PLAN_STATUS',TRUE,2,'system'),
+(109,'EXECUTED','Plan de validación ejecutado correctamente','Ejecutado','VALIDATION_SOURCE_PLAN_STATUS',TRUE,3,'system'),
+(110,'FAILED','Plan de validación finalizado con error','Fallido','VALIDATION_SOURCE_PLAN_STATUS',TRUE,4,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;
+
+-- GROUP: VALIDATION_HEADER_STRUCTURE (111 - 123)
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+VALUES
+(111,'carrier_code','Codigo de la Aseguradora','carrier_code_1','VALIDATION_HEADER_STRUCTURE',TRUE,1,'system'),
+(112,'producer_external_id','Codigo del Comisionista','producer_external_id_1','VALIDATION_HEADER_STRUCTURE',TRUE,2,'system'),
+(113,'client_first_name','Primer nombre del cliente','client_first_name_1','VALIDATION_HEADER_STRUCTURE',TRUE,3,'system'),
+(114,'client_middle_name','Nombre Corto del Cliente','client_middle_name_0','VALIDATION_HEADER_STRUCTURE',TRUE,4,'system'),
+(115,'client_last_name','Apellido del Cliente','client_last_name_1','VALIDATION_HEADER_STRUCTURE',TRUE,5,'system'),
+(116,'client_full_name','Nombre Completo del Cliente','client_full_name_1','VALIDATION_HEADER_STRUCTURE',TRUE,6,'system'),
+(117,'subscriber_id','Id de la Poliza','subscriber_id_1','VALIDATION_HEADER_STRUCTURE',TRUE,7,'system'),
+(118,'members_count','Número de cuentas','members_count_1','VALIDATION_HEADER_STRUCTURE',TRUE,8,'system'),
+(119,'statement_date','Fecha Poliza','statement_date_1','VALIDATION_HEADER_STRUCTURE',TRUE,9,'system'),
+(120,'paid_date','Fecha de Pago','paid_date_1','VALIDATION_HEADER_STRUCTURE',TRUE,10,'system'),
+(121,'net_amount','Monto Neto','net_amount_1','VALIDATION_HEADER_STRUCTURE',TRUE,11,'system'),
+(122,'rate','Tasa','rate_1','VALIDATION_HEADER_STRUCTURE',TRUE,12,'system'),
+(123,'commission_rate_pct','Porcentaje de Comisión','commission_rate_pct_1','VALIDATION_HEADER_STRUCTURE',TRUE,13,'system')
+ON CONFLICT (id) DO UPDATE SET
+name = EXCLUDED.name,
+description = EXCLUDED.description,
+value = EXCLUDED.value,
+parameter_group = EXCLUDED.parameter_group,
+active = EXCLUDED.active,
+sort_order = EXCLUDED.sort_order,
+updated_at = CURRENT_TIMESTAMP,
+updated_by = EXCLUDED.created_by;

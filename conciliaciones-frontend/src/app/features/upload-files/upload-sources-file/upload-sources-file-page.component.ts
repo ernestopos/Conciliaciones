@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpEventType } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -9,9 +9,12 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSelectModule } from '@angular/material/select';
 
+import { Carrier } from '../../../models/carrier.model';
 import { PresignedUploadResponse } from '../../../models/upload-source-file.model';
 import { UploadSourceFileService } from '../../../services/upload-source-file.service';
+import { CarrierService } from '../../../services/carrier.service';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 
 @Component({
@@ -25,15 +28,20 @@ import { PageHeaderComponent } from '../../../shared/components/page-header/page
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatSelectModule,
     MatSnackBarModule,
     PageHeaderComponent
   ],
   templateUrl: 'upload-sources-file-page.component.html',
   styleUrl: 'upload-sources-file-page.component.scss'
 })
-export class UploadSourcesFilePageComponent {
+export class UploadSourcesFilePageComponent implements OnInit {
   selectedFile: File | null = null;
   folder = '';
+  carriers: Carrier[] = [];
+  selectedCarrierId: number | null = null;
+  carriersLoading = false;
+  carriersError = '';
   uploadInProgress = false;
   progress = 0;
   uploadCompleted = false;
@@ -42,8 +50,13 @@ export class UploadSourcesFilePageComponent {
 
   constructor(
     private readonly uploadService: UploadSourceFileService,
+    private readonly carrierService: CarrierService,
     private readonly snackBar: MatSnackBar
   ) {}
+
+  ngOnInit(): void {
+    this.loadCarriers();
+  }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -52,14 +65,14 @@ export class UploadSourcesFilePageComponent {
   }
 
   upload(): void {
-    if (!this.selectedFile || this.uploadInProgress) {
+    if (!this.selectedFile || !this.selectedCarrierId || this.uploadInProgress) {
       return;
     }
 
     this.resetUploadState();
     this.uploadInProgress = true;
 
-    this.uploadService.generatePresignedUrl(this.selectedFile, this.folder).subscribe({
+    this.uploadService.generatePresignedUrl(this.selectedFile,this.selectedCarrierId,this.folder).subscribe({
       next: (response: PresignedUploadResponse) => {
         this.uploadInfo = response;
         this.startUpload(response, this.selectedFile as File);
@@ -167,6 +180,29 @@ export class UploadSourcesFilePageComponent {
     }
 
     return this.uploadCompleted ? 'Carga finalizada' : 'Finalizando cargue';
+  }
+
+  private loadCarriers(): void {
+    this.carriersLoading = true;
+    this.carriersError = '';
+
+    this.carrierService.list().subscribe({
+      next: (carriers) => {
+        this.carriers = carriers.filter((carrier) => carrier.active !== false);
+        this.carriersLoading = false;
+
+        if (!this.carriers.length) {
+          this.carriersError = 'No hay carriers activos configurados.';
+        }
+      },
+      error: () => {
+        this.carriers = [];
+        this.selectedCarrierId = null;
+        this.carriersLoading = false;
+        this.carriersError = 'No fue posible cargar los carriers.';
+        this.snackBar.open(this.carriersError, 'Cerrar', { duration: 5000 });
+      }
+    });
   }
 
   private handleError(message: string): void {

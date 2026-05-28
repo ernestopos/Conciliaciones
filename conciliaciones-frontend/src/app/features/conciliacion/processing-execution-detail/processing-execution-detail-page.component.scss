@@ -191,3 +191,13 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+.detail-button {
+  margin-top: 12px;
+  align-self: flex-start;
+}
+
+.detail-button mat-icon {
+  margin-right: 6px;
+}

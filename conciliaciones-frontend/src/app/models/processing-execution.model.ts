@@ -30,3 +30,13 @@ export interface ScheduledTaskStepModel {
 export interface ProcessingExecutionDetailModel extends ProcessingExecutionModel {
   tasks: ScheduledTaskStepModel[];
 }
+
+
+export interface ValidationExecutionDetailModel {
+  startedAt?: string;
+  finishedAt?: string;
+  successful?: boolean;
+  message?: string;
+  validationTypeDescription?: string;
+  validationStatusDescription?: string;
+}

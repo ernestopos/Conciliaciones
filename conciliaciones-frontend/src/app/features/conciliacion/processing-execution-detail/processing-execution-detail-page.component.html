@@ -59,6 +59,18 @@
                 <span>Estado</span>
                 <strong>{{ task.statusName || '—' }}</strong>
               </div>
+
+              @if (canShowValidationDetail(task)) {
+                <button
+                  mat-stroked-button
+                  color="primary"
+                  type="button"
+                  class="detail-button"
+                  (click)="openValidationDetail()">
+                  <mat-icon>visibility</mat-icon>
+                  Detalle
+                </button>
+              }
             </div>
           </article>
           @if (!last) {

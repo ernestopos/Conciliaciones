@@ -19,7 +19,15 @@ const agencyCrudConfig: CrudRouteConfig = {
   columns: ['id', 'carrierId', 'externalAgencyId', 'name', 'active'],
   headers: { id: 'ID', carrierId: 'Carrier', externalAgencyId: 'ID externo', name: 'Nombre', active: 'Activo' },
   fields: [
-    { key: 'carrierId', label: 'Carrier ID', type: 'number' },
+    {
+      key: 'carrierId',
+      label: 'Carrier',
+      type: 'select',
+      required: true,
+      optionsResourceKey: 'carriers',
+      optionValueKey: 'id',
+      optionLabelKey: 'name'
+    },
     { key: 'externalAgencyId', label: 'ID externo' },
     { key: 'name', label: 'Nombre', required: true },
     { key: 'active', label: 'Activo', type: 'checkbox' }
@@ -68,12 +76,12 @@ const producerCrudConfig: CrudRouteConfig = {
   columns: ['id', 'agencyId', 'externalProducerId', 'fullName', 'email', 'active'],
   headers: { id: 'ID', agencyId: 'Agencia', externalProducerId: 'ID externo', fullName: 'Nombre completo', email: 'Correo', active: 'Activo' },
   fields: [
-    { key: 'agencyId', label: 'Agencia ID', type: 'number' },
+    { key: 'agencyId', label: 'Agencia', type: 'select', required: true, optionsResourceKey: 'agencies', optionValueKey: 'id', optionLabelKey: 'name' },
     { key: 'externalProducerId', label: 'ID externo' },
     { key: 'firstName', label: 'Nombres' },
     { key: 'lastName', label: 'Apellidos' },
     { key: 'fullName', label: 'Nombre completo', required: true },
-    { key: 'email', label: 'Correo' },
+    { key: 'email', label: 'Correo', type: 'email' },
     { key: 'phone', label: 'Teléfono' },
     { key: 'npn', label: 'NPN' },
     { key: 'taxIdMasked', label: 'Tax ID mascarado' },
