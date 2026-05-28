@@ -1,0 +1,54 @@
+server:
+  port: ${SERVER_PORT:8084}
+
+spring:
+  application:
+    name: ms-management-task
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5440/conciliaciones_db}
+    username: ${DB_USERNAME:conci001}
+    password: ${DB_PASSWORD:conci001}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:192.168.1.20:9092}
+    consumer:
+      group-id: ${KAFKA_GROUP_ID:ms-management-task}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        spring.json.trusted.packages: '*'
+        spring.json.use.type.headers: false
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+management-task:
+  scheduler:
+    pool-size: ${TASK_SCHEDULER_POOL_SIZE:5}
+    refresh-fixed-delay-ms: ${TASK_SCHEDULER_REFRESH_DELAY_MS:15000}
+  kafka:
+    topics:
+      file-upload-confirmed: ${KAFKA_TOPIC_FILE_UPLOAD_CONFIRMED:conciliaciones.file-upload-confirmed}
+      execution-plan-status-changed: ${KAFKA_TOPIC_EXECUTION_PLAN_STATUS_CHANGED:conciliaciones.pipeline.task.status}
+      task-execution-requested: ${KAFKA_TOPIC_TASK_EXECUTION_REQUESTED:conciliaciones.pipeline.task.request}
+
+
+app:
+  aws:
+    s3:
+      enabled: ${APP_AWS_S3_ENABLED:true}
+      localstack-enabled: ${APP_AWS_S3_LOCALSTACK_ENABLED:true}
+      region: ${APP_AWS_S3_REGION:us-east-1}
+      endpoint: ${APP_AWS_S3_ENDPOINT:http://localhost:4566}
+      access-key: ${APP_AWS_S3_ACCESS_KEY:test}
+      secret-key: ${APP_AWS_S3_SECRET_KEY:test}
+      path-style-access-enabled: ${APP_AWS_S3_PATH_STYLE:true}
+      presigned-url-duration-minutes: ${APP_AWS_S3_PRESIGNED_DURATION_MINUTES:15}
+      default-bucket: ${APP_AWS_S3_DEFAULT_BUCKET:conciliaciones-file-management-dev}
+      auto-create-default-bucket: ${APP_AWS_S3_AUTO_CREATE_DEFAULT_BUCKET:false}
+      bucket-prefix: ${APP_AWS_S3_BUCKET_PREFIX:fm}

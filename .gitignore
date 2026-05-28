@@ -1,0 +1,11 @@
+# Maven
+target/
+
+# Generated sources
+**/generated-sources/
+
+# Frontend / Node (Conciliaciones Angular demo)
+**/node_modules/
+**/.angular/
+conciliaciones-frontend/package-lock.json
+**/dist/

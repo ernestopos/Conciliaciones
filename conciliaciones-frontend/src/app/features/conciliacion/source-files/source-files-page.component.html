@@ -1,0 +1,9 @@
+<app-page-header title="Archivos fuente" subtitle="Entidad source_file (JPA)" />
+<app-search-filter-bar (filterChange)="applyFilter($event)" />
+@if (loading) {
+  <app-loading-spinner />
+} @else if (!filtered.length) {
+  <app-empty-state title="Sin archivos" description="No hay archivos fuente para mostrar." />
+} @else {
+  <app-generic-table [data]="filtered" [displayedColumns]="columns" [headers]="headers" />
+}

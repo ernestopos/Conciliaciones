@@ -1,0 +1,119 @@
+<app-page-header
+  title="Upload sources file"
+  subtitle="Cargue asíncrono de archivos fuente usando URL prefirmada del ms-file-management."
+/>
+
+<div class="upload-page">
+  <mat-card appearance="outlined">
+    <mat-card-header>
+      <mat-card-title>Cargar archivo a AWS S3</mat-card-title>
+      <mat-card-subtitle>
+        Selecciona el archivo y ejecuta el cargue asíncrono.
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <div class="form-grid">
+        <div class="file-picker">
+          <button
+            mat-stroked-button
+            color="primary"
+            type="button"
+            (click)="fileInput.click()"
+            [disabled]="uploadInProgress"
+          >
+            <mat-icon>attach_file</mat-icon>
+            Seleccionar archivo
+          </button>
+
+          <input
+            #fileInput
+            type="file"
+            hidden
+            (change)="onFileSelected($event)"
+          />
+
+          <div class="selected-file" *ngIf="selectedFile as file; else noFileSelected">
+            <strong>{{ file.name }}</strong>
+            <span>{{ file.type || 'application/octet-stream' }}</span>
+            <span>{{ file.size | number }} bytes</span>
+          </div>
+
+          <ng-template #noFileSelected>
+            <span class="helper-text">No has seleccionado ningún archivo.</span>
+          </ng-template>
+        </div>
+
+
+        <mat-form-field appearance="outline">
+          <mat-label>Carrier</mat-label>
+          <mat-select
+            [(ngModel)]="selectedCarrierId"
+            [disabled]="uploadInProgress || carriersLoading"
+            required
+          >
+            <mat-option *ngFor="let carrier of carriers" [value]="carrier.id">
+              {{ carrier.code }} - {{ carrier.name }}
+            </mat-option>
+          </mat-select>
+          <mat-hint *ngIf="!carriersError">Selecciona la aseguradora asociada al archivo.</mat-hint>
+          <mat-error *ngIf="carriersError">{{ carriersError }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Folder opcional</mat-label>
+          <input
+            matInput
+            [(ngModel)]="folder"
+            [disabled]="uploadInProgress"
+            placeholder="Ej: prueba"
+          />
+          <mat-hint>Se adiciona al objectKey antes del nombre del archivo.</mat-hint>
+        </mat-form-field>
+      </div>
+
+      <div class="actions">
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          (click)="upload()"
+          [disabled]="!selectedFile || !selectedCarrierId || uploadInProgress || carriersLoading"
+        >
+          <mat-icon>cloud_upload</mat-icon>
+          {{ uploadInProgress ? 'Cargando...' : 'Subir archivo' }}
+        </button>
+      </div>
+
+      <div class="progress-wrapper" *ngIf="uploadInProgress || uploadCompleted">
+        <div class="progress-header">
+          <div>
+            <span>Progreso del cargue</span>
+            <small>{{ getProgressStatusLabel() }}</small>
+          </div>
+
+          <strong>{{ progress }}%</strong>
+        </div>
+
+        <div class="custom-progress-bar">
+          <div
+            class="progress-fill"
+            [class.progress-fill-active]="uploadInProgress"
+            [style.width.%]="progress"
+            [style.background]="getProgressColor()"
+          ></div>
+        </div>
+      </div>
+
+      <div class="message success" *ngIf="uploadCompleted && uploadInfo">
+        <p><strong>Archivo cargado exitosamente.</strong></p>
+        <p><strong>Bucket:</strong> {{ uploadInfo.bucketName }}</p>
+        <p><strong>Object key:</strong> {{ uploadInfo.objectKey }}</p>
+      </div>
+
+      <div class="message error" *ngIf="uploadError">
+        {{ uploadError }}
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

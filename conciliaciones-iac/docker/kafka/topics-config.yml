@@ -1,0 +1,32 @@
+topics:
+  - name: conciliaciones.logs-app
+    partitions: 1
+    replication: 1
+
+  - name: conciliaciones.logs-error
+    partitions: 1
+    replication: 1
+
+  - name: conciliaciones.logs-audit
+    partitions: 1
+    replication: 1
+  
+  - name: conciliaciones.file-upload-confirmed
+    partitions: 1
+    replication: 1
+    
+  - name: conciliaciones.pipeline.task.request
+    partitions: 1
+    replication: 1
+
+  - name: conciliaciones.pipeline.task.status
+    partitions: 1
+    replication: 1
+
+  - name: conciliaciones.pipeline.completed
+    partitions: 1
+    replication: 1
+
+  - name: conciliaciones.pipeline.failed
+    partitions: 1
+    replication: 1
