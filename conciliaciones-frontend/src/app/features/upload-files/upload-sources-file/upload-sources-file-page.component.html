@@ -44,6 +44,22 @@
           </ng-template>
         </div>
 
+
+        <mat-form-field appearance="outline">
+          <mat-label>Carrier</mat-label>
+          <mat-select
+            [(ngModel)]="selectedCarrierId"
+            [disabled]="uploadInProgress || carriersLoading"
+            required
+          >
+            <mat-option *ngFor="let carrier of carriers" [value]="carrier.id">
+              {{ carrier.code }} - {{ carrier.name }}
+            </mat-option>
+          </mat-select>
+          <mat-hint *ngIf="!carriersError">Selecciona la aseguradora asociada al archivo.</mat-hint>
+          <mat-error *ngIf="carriersError">{{ carriersError }}</mat-error>
+        </mat-form-field>
+
         <mat-form-field appearance="outline">
           <mat-label>Folder opcional</mat-label>
           <input
@@ -62,7 +78,7 @@
           color="primary"
           type="button"
           (click)="upload()"
-          [disabled]="!selectedFile || uploadInProgress"
+          [disabled]="!selectedFile || !selectedCarrierId || uploadInProgress || carriersLoading"
         >
           <mat-icon>cloud_upload</mat-icon>
           {{ uploadInProgress ? 'Cargando...' : 'Subir archivo' }}

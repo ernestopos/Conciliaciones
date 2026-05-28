@@ -6,13 +6,16 @@ export type CrudResourceKey =
   | 'parameters'
   | 'reconciliation-cases';
 
-export type CrudFieldType = 'text' | 'textarea' | 'number' | 'date' | 'datetime-local' | 'checkbox';
+export type CrudFieldType = 'text' | 'textarea' | 'number' | 'date' | 'datetime-local' | 'checkbox' | 'select' | 'email';
 
 export interface CrudFieldConfig {
   key: string;
   label: string;
   type?: CrudFieldType;
   required?: boolean;
+  optionsResourceKey?: CrudResourceKey;
+  optionValueKey?: string;
+  optionLabelKey?: string;
 }
 
 export interface CrudRouteConfig {

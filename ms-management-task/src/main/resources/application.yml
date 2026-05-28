@@ -36,3 +36,19 @@ management-task:
       file-upload-confirmed: ${KAFKA_TOPIC_FILE_UPLOAD_CONFIRMED:conciliaciones.file-upload-confirmed}
       execution-plan-status-changed: ${KAFKA_TOPIC_EXECUTION_PLAN_STATUS_CHANGED:conciliaciones.pipeline.task.status}
       task-execution-requested: ${KAFKA_TOPIC_TASK_EXECUTION_REQUESTED:conciliaciones.pipeline.task.request}
+
+
+app:
+  aws:
+    s3:
+      enabled: ${APP_AWS_S3_ENABLED:true}
+      localstack-enabled: ${APP_AWS_S3_LOCALSTACK_ENABLED:true}
+      region: ${APP_AWS_S3_REGION:us-east-1}
+      endpoint: ${APP_AWS_S3_ENDPOINT:http://localhost:4566}
+      access-key: ${APP_AWS_S3_ACCESS_KEY:test}
+      secret-key: ${APP_AWS_S3_SECRET_KEY:test}
+      path-style-access-enabled: ${APP_AWS_S3_PATH_STYLE:true}
+      presigned-url-duration-minutes: ${APP_AWS_S3_PRESIGNED_DURATION_MINUTES:15}
+      default-bucket: ${APP_AWS_S3_DEFAULT_BUCKET:conciliaciones-file-management-dev}
+      auto-create-default-bucket: ${APP_AWS_S3_AUTO_CREATE_DEFAULT_BUCKET:false}
+      bucket-prefix: ${APP_AWS_S3_BUCKET_PREFIX:fm}

@@ -135,6 +135,18 @@ services:
       KAFKA_TOPIC_FILE_UPLOAD_CONFIRMED: conciliaciones.file-upload-confirmed
       KAFKA_TOPIC_EXECUTION_PLAN_STATUS_CHANGED: conciliaciones.pipeline.task.status
       KAFKA_TOPIC_TASK_EXECUTION_REQUESTED: conciliaciones.pipeline.task.request
+      APP_AWS_S3_ENABLED: "true"
+      APP_AWS_S3_LOCALSTACK_ENABLED: "true"
+      APP_AWS_S3_REGION: us-east-1
+      APP_AWS_S3_ENDPOINT: http://localstack:4566
+      APP_AWS_S3_ACCESS_KEY: test
+      APP_AWS_S3_SECRET_KEY: test
+      APP_AWS_S3_PATH_STYLE: "true"
+      APP_AWS_S3_PATH_STYLE_ACCESS_ENABLED: "true"
+      APP_AWS_S3_PRESIGNED_DURATION_MINUTES: 15
+      APP_AWS_S3_DEFAULT_BUCKET: conciliaciones-file-management-dev
+      APP_AWS_S3_AUTO_CREATE_DEFAULT_BUCKET: "false"
+      APP_AWS_S3_BUCKET_PREFIX: fm
       JAVA_OPTS: "-Xms256m -Xmx512m"
     depends_on:
       postgres:
@@ -143,6 +155,8 @@ services:
         condition: service_started
       kafka-init:
         condition: service_completed_successfully
+      localstack:
+        condition: service_started
     networks:
       - conciliaciones_net
       - conciliaciones-messaging-net

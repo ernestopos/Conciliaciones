@@ -2,6 +2,9 @@ package com.conciliaciones.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(schema = "reconciliation", name = "raw_import_record")
@@ -27,8 +30,9 @@ public class RawImportRecordEntity {
     @Column(name="source_row_key",length=255)
     private String sourceRowKey;
 
-    @Column(name="raw_payload",nullable=false,columnDefinition="jsonb")
-    private String rawPayload;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "raw_payload", columnDefinition = "jsonb", nullable = false)
+    private JsonNode rawPayload;
 
     @Column(name="parse_status_id")
     private Long parseStatusId;
