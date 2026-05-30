@@ -1,3 +1,25 @@
-.active-link { background:#e0e7ff; color:#1d4ed8; border-radius:8px; }
-.menu-group { box-shadow:none; }
-mat-panel-title { display:flex; align-items:center; gap:8px; }
+.active-link {
+  background: var(--app-menu-active-bg);
+  color: var(--app-menu-active-text);
+  border-radius: 8px;
+}
+
+.menu-group {
+  box-shadow: none;
+  background: var(--app-sidenav-bg) !important;
+  color: var(--app-text) !important;
+}
+
+mat-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--app-text);
+}
+
+:host ::ng-deep .mat-expansion-panel-header,
+:host ::ng-deep .mat-expansion-panel-body,
+:host ::ng-deep .mat-mdc-list-item,
+:host ::ng-deep .mdc-list-item__primary-text {
+  color: var(--app-text) !important;
+}

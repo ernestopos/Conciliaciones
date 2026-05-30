@@ -36,11 +36,13 @@ public class PolicyEntity {
     @Column(name="termination_date")
     private java.time.LocalDate terminationDate;
 
-    @Column(name="status_id",nullable=false)
-    private Long statusId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "status_id", nullable = false)
+    private ParameterEntity statusId;
 
-    @Column(name="resident_state",length=100)
-    private String residentState;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "resident_state", nullable = false)
+    private ParameterEntity residentState;
 
     @Column(name="issue_state",length=100)
     private String issueState;

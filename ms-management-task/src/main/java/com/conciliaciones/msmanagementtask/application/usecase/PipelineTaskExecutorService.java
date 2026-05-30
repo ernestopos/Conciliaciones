@@ -61,7 +61,7 @@ public class PipelineTaskExecutorService {
             pipelineTaskStatusService.markTaskAsProcess(task.getId());
             ScheduledTaskRunnable runnable = applicationContext.getBean(task.getTaskBeanName(), ScheduledTaskRunnable.class);
             runnable.execute(task);
-            sleepDemoExecution();
+            //sleepDemoExecution();
             pipelineTaskStatusService.markTaskAsExecuted(task.getId());
             activateNextTaskOrClosePlan(task);
             log.info("LOG FIN X = executePipelineTask - taskId={}, executionPlanTaskId={}, taskType={}",
