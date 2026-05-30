@@ -4,4 +4,6 @@ import com.conciliaciones.domain.entity.ProducerEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProducerRepository extends JpaRepository<ProducerEntity, Long> {
+
+    boolean existsByExternalProducerId(String externalProducerId);
 }

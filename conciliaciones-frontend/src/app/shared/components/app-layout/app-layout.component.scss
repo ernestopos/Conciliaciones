@@ -1,3 +1,18 @@
-.shell{height:calc(100vh - 56px)}
-.content{padding:16px;background:#f1f5f9;min-height:100%}
-mat-sidenav{width:320px;background:#fff;border-right:1px solid #e2e8f0}
+.shell {
+  height: calc(100vh - 56px);
+  background: var(--app-bg);
+}
+
+.content {
+  padding: 16px;
+  background: var(--app-content-bg);
+  color: var(--app-text);
+  min-height: 100%;
+}
+
+mat-sidenav {
+  width: 320px;
+  background: var(--app-sidenav-bg);
+  color: var(--app-text);
+  border-right: 1px solid var(--app-border);
+}

@@ -1,3 +1,21 @@
-.card{max-width:460px;border-radius:16px}
-.form{display:flex;flex-direction:column;gap:10px}
-small{color:#64748b}
+.card {
+  max-width: 460px;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.card h1,
+.card p {
+  color: #0f172a;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+small {
+  color: #64748b;
+}

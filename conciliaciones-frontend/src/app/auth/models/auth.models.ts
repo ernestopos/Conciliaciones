@@ -24,13 +24,17 @@ export interface LoginCredentials {
 export interface LoginResult {
   success: boolean;
   token?: string;
+  refreshToken?: string;
   user?: AuthUser;
   expiresIn?: number;
+  expiresAt?: number;
   errorMessage?: string;
 }
 
 export interface AuthSession {
   token: string;
+  refreshToken?: string;
   user: AuthUser;
   expiresIn?: number;
+  expiresAt?: number;
 }

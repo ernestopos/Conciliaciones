@@ -251,7 +251,7 @@ CREATE TABLE IF NOT EXISTS policy (
     issue_date          DATE,
     termination_date    DATE,
     status_id           BIGINT NOT NULL,
-    resident_state      VARCHAR(100),
+    resident_state      BIGINT NOT NULL,
     issue_state         VARCHAR(100),
     members_count       INTEGER,
     source_key          VARCHAR(255),
@@ -266,6 +266,8 @@ CREATE TABLE IF NOT EXISTS policy (
         FOREIGN KEY (client_id) REFERENCES client(id),
     CONSTRAINT fk_policy_status
         FOREIGN KEY (status_id) REFERENCES parameter(id),
+	CONSTRAINT fk_policy_resident_state
+        FOREIGN KEY (resident_state) REFERENCES parameter(id),
     CONSTRAINT uq_policy_carrier_number UNIQUE (carrier_id, policy_number)
 );
 
@@ -1087,8 +1089,8 @@ VALUES
 (99,'EMPTY_ROW','Valida filas vacías','Fila Vacía','SOURCE_FILE_VALIDATION_TYPE',TRUE,9,'system'),
 (100,'INVALID_NUMBER','Valida campos numéricos','Número Inválido','SOURCE_FILE_VALIDATION_TYPE',TRUE,10,'system'),
 (101,'INVALID_DATE','Valida campos de fecha','Fecha Inválida','SOURCE_FILE_VALIDATION_TYPE',TRUE,11,'system'),
-(102,'UNKNOWN_COLUMN','Valida columnas no esperadas','Columna Desconocida','SOURCE_FILE_VALIDATION_TYPE',TRUE,12,'system'),
-(103,'DUPLICATED_FILE','Valida duplicidad del archivo por checksum','Archivo Duplicado','SOURCE_FILE_VALIDATION_TYPE',TRUE,13,'system')
+(102,'VALIDATE_CARRIER','Valida que exista el carrier','Carrier Existe','SOURCE_FILE_VALIDATION_TYPE',TRUE,12,'system'),
+(103,'VALIDATE_PRODUCER','Valida que exista el comisionista','Producer Existe','SOURCE_FILE_VALIDATION_TYPE',TRUE,13,'system')
 ON CONFLICT (id) DO UPDATE SET
 name = EXCLUDED.name,
 description = EXCLUDED.description,
@@ -1141,13 +1143,15 @@ VALUES
 (114,'client_middle_name','Nombre Corto del Cliente','client_middle_name_0','VALIDATION_HEADER_STRUCTURE',TRUE,4,'system'),
 (115,'client_last_name','Apellido del Cliente','client_last_name_1','VALIDATION_HEADER_STRUCTURE',TRUE,5,'system'),
 (116,'client_full_name','Nombre Completo del Cliente','client_full_name_1','VALIDATION_HEADER_STRUCTURE',TRUE,6,'system'),
-(117,'subscriber_id','Id de la Poliza','subscriber_id_1','VALIDATION_HEADER_STRUCTURE',TRUE,7,'system'),
-(118,'members_count','Número de cuentas','members_count_1','VALIDATION_HEADER_STRUCTURE',TRUE,8,'system'),
-(119,'statement_date','Fecha Poliza','statement_date_1','VALIDATION_HEADER_STRUCTURE',TRUE,9,'system'),
-(120,'paid_date','Fecha de Pago','paid_date_1','VALIDATION_HEADER_STRUCTURE',TRUE,10,'system'),
-(121,'net_amount','Monto Neto','net_amount_1','VALIDATION_HEADER_STRUCTURE',TRUE,11,'system'),
-(122,'rate','Tasa','rate_1','VALIDATION_HEADER_STRUCTURE',TRUE,12,'system'),
-(123,'commission_rate_pct','Porcentaje de Comisión','commission_rate_pct_1','VALIDATION_HEADER_STRUCTURE',TRUE,13,'system')
+(117,'policy_number','Identificador del Número de Poliza','policy_number_1','VALIDATION_HEADER_STRUCTURE',TRUE,7,'system'),
+(118,'status_id','Estado de Poliza','status_id_1','VALIDATION_HEADER_STRUCTURE',TRUE,8,'system'),
+(119,'subscriber_id','Id de la Poliza','subscriber_id_1','VALIDATION_HEADER_STRUCTURE',TRUE,9,'system'),
+(120,'members_count','Número de cuentas','members_count_1','VALIDATION_HEADER_STRUCTURE',TRUE,10,'system'),
+(121,'statement_date','Fecha Poliza','statement_date_1','VALIDATION_HEADER_STRUCTURE',TRUE,11,'system'),
+(122,'paid_date','Fecha de Pago','paid_date_1','VALIDATION_HEADER_STRUCTURE',TRUE,12,'system'),
+(123,'net_amount','Monto Neto','net_amount_1','VALIDATION_HEADER_STRUCTURE',TRUE,13,'system'),
+(124,'rate','Tasa','rate_1','VALIDATION_HEADER_STRUCTURE',TRUE,14,'system'),
+(125,'commission_rate_pct','Porcentaje de Comisión','commission_rate_pct_1','VALIDATION_HEADER_STRUCTURE',TRUE,15,'system')
 ON CONFLICT (id) DO UPDATE SET
 name = EXCLUDED.name,
 description = EXCLUDED.description,
