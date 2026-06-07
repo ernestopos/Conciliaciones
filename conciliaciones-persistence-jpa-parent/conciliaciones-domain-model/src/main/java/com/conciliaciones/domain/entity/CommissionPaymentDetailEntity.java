@@ -15,14 +15,13 @@ public class CommissionPaymentDetailEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="commission_payment_id",nullable=false)
-    private Long commissionPaymentId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "policy_id", nullable = false)
+    private PolicyEntity policyId;
 
-    @Column(name="policy_id")
-    private Long policyId;
-
-    @Column(name="commission_statement_item_id")
-    private Long commissionStatementItemId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "commission_statement_item_id", nullable = false)
+    private CommissionStatementItemEntity commissionStatementItemId;
 
     @Column(name="reconciliation_case_id")
     private Long reconciliationCaseId;

@@ -21,9 +21,6 @@ public class CommissionAssignmentEntity {
     @Column(name="producer_id",nullable=false)
     private Long producerId;
 
-    @Column(name="role_id",nullable=false)
-    private Long roleId;
-
     @Column(name="split_percentage",precision=7,scale=4)
     private java.math.BigDecimal splitPercentage;
 

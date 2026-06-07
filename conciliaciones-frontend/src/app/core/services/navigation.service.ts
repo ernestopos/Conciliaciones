@@ -18,6 +18,7 @@ export class NavigationService {
         { label: 'Productores', icon: 'groups', route: '/maestros/productores' },
         { label: 'Agencias', icon: 'apartment', route: '/maestros/agencias' },
         { label: 'Carriers', icon: 'domain', route: '/maestros/carriers' },
+        { label: 'Pólizas', icon: 'description', route: '/maestros/polizas' },
       ]
     },
     {

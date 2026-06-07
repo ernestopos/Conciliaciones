@@ -10,6 +10,8 @@ import { DomainPlaceholderComponent } from './features/placeholders/domain-place
 import { CrudEntityPageComponent } from './shared/components/crud-entity-page/crud-entity-page.component';
 import { CrudRouteConfig } from './core/models/crud.models';
 import { UploadSourcesFilePageComponent } from './features/upload-files/upload-sources-file/upload-sources-file-page.component';
+import { PoliciesPageComponent } from './features/maestros/policies/policies-page.component';
+import { CommissionPaymentsPageComponent } from './features/pagos/liquidaciones/commission-payments-page.component';
 
 const agencyCrudConfig: CrudRouteConfig = {
   resourceKey: 'agencies',
@@ -147,13 +149,14 @@ export const routes: Routes = [
       { path: 'seguridad/usuarios', component: DomainPlaceholderComponent, data: { title: 'Seguridad' } },
       { path: 'maestros/agencias', component: CrudEntityPageComponent, data: { crudConfig: agencyCrudConfig } },
       { path: 'maestros/carriers', component: CrudEntityPageComponent, data: { crudConfig: carrierCrudConfig } },
+      { path: 'maestros/polizas', component: PoliciesPageComponent },
       { path: 'maestros/clientes', component: CrudEntityPageComponent, data: { crudConfig: clientCrudConfig } },
       { path: 'maestros/productores', component: CrudEntityPageComponent, data: { crudConfig: producerCrudConfig } },
       { path: 'maestros/parametros', component: CrudEntityPageComponent, data: { crudConfig: parameterCrudConfig } },
       { path: 'maestros/estados-poliza', component: DomainPlaceholderComponent, data: { title: 'Estados de Póliza' } },
       { path: 'maestros/reglas-comision', component: DomainPlaceholderComponent, data: { title: 'Reglas de Comisión' } },
       { path: 'conciliacion/casos', component: CrudEntityPageComponent, data: { crudConfig: reconciliationCaseCrudConfig } },
-      { path: 'pagos/liquidaciones', component: DomainPlaceholderComponent, data: { title: 'Pagos / Liquidaciones' } },
+      { path: 'pagos/liquidaciones', component: CommissionPaymentsPageComponent },
       { path: 'auditoria/registros', component: DomainPlaceholderComponent, data: { title: 'Auditoría' } },
       { path: 'reportes', component: DomainPlaceholderComponent, data: { title: 'Reportes' } },
       { path: 'upload-files/upload-sources-file',  component: UploadSourcesFilePageComponent },

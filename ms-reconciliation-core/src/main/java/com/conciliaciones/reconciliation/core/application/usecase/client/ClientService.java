@@ -1,6 +1,6 @@
-    package com.conciliaciones.reconciliation.core.application.usecase.client;
+package com.conciliaciones.reconciliation.core.application.usecase.client;
 
-    import com.conciliaciones.domain.entity.ClientEntity;
+import com.conciliaciones.domain.entity.ClientEntity;
 import com.conciliaciones.reconciliation.core.application.port.in.client.CreateClientUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.client.DeleteClientUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.client.GetClientByIdUseCase;
@@ -17,11 +17,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import com.conciliaciones.reconciliation.core.application.port.in.client.SearchClientsUseCase;
 
     @Service
     @Slf4j
     @RequiredArgsConstructor
-    public class ClientService implements CreateClientUseCase, GetClientByIdUseCase, ListClientsUseCase, UpdateClientUseCase, DeleteClientUseCase {
+    public class ClientService implements CreateClientUseCase, GetClientByIdUseCase, ListClientsUseCase, UpdateClientUseCase, DeleteClientUseCase, SearchClientsUseCase {
 
         private final ClientPersistencePort persistencePort;
 
@@ -112,5 +113,16 @@ import org.springframework.stereotype.Service;
                 entity.getUpdatedAt(),
                 entity.getUpdatedBy()
             );
+        }
+
+        @Override
+        public Page<ClientResponse> search(String externalClientId, String fullName, Pageable pageable) {
+            log.info("LOG INICIO X = searchClients externalClientId={} fullName={}", externalClientId, fullName);
+
+            Page<ClientResponse> result = persistencePort.search(externalClientId, fullName, pageable)
+                    .map(this::toResponse);
+
+            log.info("LOG FIN X = searchClients totalElements={}", result.getTotalElements());
+            return result;
         }
     }
