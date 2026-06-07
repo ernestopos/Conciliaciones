@@ -42,7 +42,7 @@ public class PolicyEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "resident_state", nullable = false)
-    private ParameterEntity residentState;
+    private CityEntity residentState;
 
     @Column(name="issue_state",length=100)
     private String issueState;

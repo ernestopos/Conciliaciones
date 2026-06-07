@@ -238,6 +238,43 @@ CREATE TABLE IF NOT EXISTS reconciliation.source_file_validation (
 );
 
 -- =========================================================
+-- 5.1. PAISES - ESTADOS - CIUDADES
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS reconciliation.country (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(10) NOT NULL UNIQUE,
+    name VARCHAR(150) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS reconciliation.state (
+    id BIGSERIAL PRIMARY KEY,
+    country_id BIGINT NOT NULL,
+    code VARCHAR(20) NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT fk_state_country
+        FOREIGN KEY (country_id)
+        REFERENCES reconciliation.country (id),
+    CONSTRAINT uk_state_country_code
+        UNIQUE (country_id, code)
+);
+
+CREATE TABLE IF NOT EXISTS reconciliation.city (
+    id BIGSERIAL PRIMARY KEY,
+    state_id BIGINT NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT fk_city_state
+        FOREIGN KEY (state_id)
+        REFERENCES reconciliation.state (id),
+    CONSTRAINT uk_city_state_name
+        UNIQUE (state_id, name)
+);
+
+
+-- =========================================================
 -- 5. POLIZAS Y MODELO CANONICO
 -- =========================================================
 
@@ -267,7 +304,7 @@ CREATE TABLE IF NOT EXISTS policy (
     CONSTRAINT fk_policy_status
         FOREIGN KEY (status_id) REFERENCES parameter(id),
 	CONSTRAINT fk_policy_resident_state
-        FOREIGN KEY (resident_state) REFERENCES parameter(id),
+        FOREIGN KEY (resident_state) REFERENCES city(id),
     CONSTRAINT uq_policy_carrier_number UNIQUE (carrier_id, policy_number)
 );
 
@@ -313,8 +350,7 @@ CREATE TABLE IF NOT EXISTS commission_assignment (
     id                  BIGSERIAL PRIMARY KEY,
     policy_id           BIGINT NOT NULL,
     producer_id         BIGINT NOT NULL,
-    role_id             BIGINT NOT NULL,
-    split_percentage    NUMERIC(7,4),
+    split_percentage    NUMERIC(18,2),
     valid_from          DATE NOT NULL,
     valid_to            DATE,
     active              BOOLEAN NOT NULL DEFAULT TRUE,
@@ -325,9 +361,7 @@ CREATE TABLE IF NOT EXISTS commission_assignment (
     CONSTRAINT fk_commission_assignment_policy
         FOREIGN KEY (policy_id) REFERENCES policy(id) ON DELETE CASCADE,
     CONSTRAINT fk_commission_assignment_producer
-        FOREIGN KEY (producer_id) REFERENCES producer(id),
-    CONSTRAINT fk_commission_assignment_role
-        FOREIGN KEY (role_id) REFERENCES parameter(id),
+        FOREIGN KEY (producer_id) REFERENCES producer(id),    
     CONSTRAINT ck_commission_assignment_split
         CHECK (split_percentage IS NULL OR (split_percentage >= 0 AND split_percentage <= 100))
 );
@@ -388,7 +422,7 @@ CREATE TABLE IF NOT EXISTS commission_statement_item (
     premium                 NUMERIC(18,2),
     net_amount              NUMERIC(18,2),
     rate                    NUMERIC(10,4),
-    commission_rate_pct     NUMERIC(7,4),
+    commission_rate_pct     NUMERIC(10,4),
     commission_amount       NUMERIC(18,2),
     subtotal                NUMERIC(18,2),
     month_amount            NUMERIC(18,2),
@@ -513,7 +547,6 @@ CREATE TABLE IF NOT EXISTS commission_payment (
 
 CREATE TABLE IF NOT EXISTS commission_payment_detail (
     id                           BIGSERIAL PRIMARY KEY,
-    commission_payment_id        BIGINT NOT NULL,
     policy_id                    BIGINT,
     commission_statement_item_id BIGINT,
     reconciliation_case_id       BIGINT,
@@ -524,9 +557,7 @@ CREATE TABLE IF NOT EXISTS commission_payment_detail (
     created_at                   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by                   VARCHAR(100),
     updated_at                   TIMESTAMP,
-    updated_by                   VARCHAR(100),
-    CONSTRAINT fk_commission_payment_detail_payment
-        FOREIGN KEY (commission_payment_id) REFERENCES commission_payment(id) ON DELETE CASCADE,
+    updated_by                   VARCHAR(100),   
     CONSTRAINT fk_commission_payment_detail_policy
         FOREIGN KEY (policy_id) REFERENCES policy(id),
     CONSTRAINT fk_commission_payment_detail_statement_item
@@ -623,10 +654,8 @@ CREATE TABLE IF NOT EXISTS reconciliation.scheduled_task (
     CONSTRAINT uq_scheduled_task_plan_type UNIQUE (id_execution_plan_task, id_task_type)
 );
 
-
-
 -- =========================================================
--- 15. INDICES
+-- 16. INDICES
 -- =========================================================
 
 CREATE INDEX IF NOT EXISTS idx_agency_carrier_id
@@ -679,7 +708,6 @@ CREATE INDEX IF NOT EXISTS idx_raw_import_record_parse_status_id
 
 CREATE INDEX IF NOT EXISTS idx_raw_import_record_payload_gin
     ON raw_import_record USING GIN(raw_payload);
-
 
 CREATE INDEX IF NOT EXISTS idx_validation_source_plan_source_file_id
     ON reconciliation.validation_source_plan(source_file_id);
@@ -741,9 +769,6 @@ CREATE INDEX IF NOT EXISTS idx_commission_assignment_policy_id
 CREATE INDEX IF NOT EXISTS idx_commission_assignment_producer_id
     ON commission_assignment(producer_id);
 
-CREATE INDEX IF NOT EXISTS idx_commission_assignment_role_id
-    ON commission_assignment(role_id);
-
 CREATE INDEX IF NOT EXISTS idx_commission_statement_source_file_id
     ON commission_statement(source_file_id);
 
@@ -801,9 +826,6 @@ CREATE INDEX IF NOT EXISTS idx_commission_payment_producer_id
 CREATE INDEX IF NOT EXISTS idx_commission_payment_status_id
     ON commission_payment(status_id);
 
-CREATE INDEX IF NOT EXISTS idx_commission_payment_detail_payment_id
-    ON commission_payment_detail(commission_payment_id);
-
 CREATE INDEX IF NOT EXISTS idx_audit_log_entity_name
     ON audit_log(entity_name);
 
@@ -828,8 +850,23 @@ CREATE INDEX IF NOT EXISTS idx_execution_plan_task_source_file
 CREATE INDEX IF NOT EXISTS idx_execution_plan_task_status 
     ON reconciliation.execution_plan_task(id_status);
 
+CREATE INDEX IF NOT EXISTS idx_state_country_id
+    ON reconciliation.state (country_id);
+
+CREATE INDEX IF NOT EXISTS idx_city_state_id
+    ON reconciliation.city (state_id);
+
+CREATE INDEX IF NOT EXISTS idx_country_name
+    ON reconciliation.country (name);
+
+CREATE INDEX IF NOT EXISTS idx_state_name
+    ON reconciliation.state (name);
+
+CREATE INDEX IF NOT EXISTS idx_city_name
+    ON reconciliation.city (name);
+
 -- =========================================================
--- 13. DATOS SEMILLA - CARRIER
+-- 17. DATOS SEMILLA - CARRIER
 -- =========================================================
 
 INSERT INTO carrier (code, name, description, created_by)
@@ -841,7 +878,7 @@ VALUES
 ON CONFLICT (code) DO NOTHING;
 
 -- =========================================================
--- 14. DATOS SEMILLA - PARAMETER (IDS FIJOS)
+-- 18. DATOS SEMILLA - PARAMETER (IDS FIJOS)
 -- =========================================================
 
 INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
@@ -1139,10 +1176,10 @@ INSERT INTO parameter (id, name, description, value, parameter_group, active, so
 VALUES
 (111,'carrier_code','Codigo de la Aseguradora','carrier_code_1','VALIDATION_HEADER_STRUCTURE',TRUE,1,'system'),
 (112,'producer_external_id','Codigo del Comisionista','producer_external_id_1','VALIDATION_HEADER_STRUCTURE',TRUE,2,'system'),
-(113,'client_first_name','Primer nombre del cliente','client_first_name_1','VALIDATION_HEADER_STRUCTURE',TRUE,3,'system'),
-(114,'client_middle_name','Nombre Corto del Cliente','client_middle_name_0','VALIDATION_HEADER_STRUCTURE',TRUE,4,'system'),
-(115,'client_last_name','Apellido del Cliente','client_last_name_1','VALIDATION_HEADER_STRUCTURE',TRUE,5,'system'),
-(116,'client_full_name','Nombre Completo del Cliente','client_full_name_1','VALIDATION_HEADER_STRUCTURE',TRUE,6,'system'),
+(113,'client_id','Identificacion del Cliente','client_id_1','VALIDATION_HEADER_STRUCTURE',TRUE,3,'system'),
+(114,'client_first_name','Primer nombre del cliente','client_first_name_1','VALIDATION_HEADER_STRUCTURE',TRUE,4,'system'),
+(115,'client_middle_name','Nombre Corto del Cliente','client_middle_name_0','VALIDATION_HEADER_STRUCTURE',TRUE,5,'system'),
+(116,'client_last_name','Apellido del Cliente','client_last_name_1','VALIDATION_HEADER_STRUCTURE',TRUE,6,'system'),
 (117,'policy_number','Identificador del Número de Poliza','policy_number_1','VALIDATION_HEADER_STRUCTURE',TRUE,7,'system'),
 (118,'status_id','Estado de Poliza','status_id_1','VALIDATION_HEADER_STRUCTURE',TRUE,8,'system'),
 (119,'subscriber_id','Id de la Poliza','subscriber_id_1','VALIDATION_HEADER_STRUCTURE',TRUE,9,'system'),
@@ -1161,3 +1198,620 @@ active = EXCLUDED.active,
 sort_order = EXCLUDED.sort_order,
 updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
+
+-- =========================================================
+-- 19. PAISES
+-- =========================================================
+
+INSERT INTO reconciliation.country (code, name, active)
+VALUES ('US', 'United States', TRUE)
+ON CONFLICT (code) DO UPDATE SET
+    name = EXCLUDED.name,
+    active = EXCLUDED.active;
+
+-- States
+INSERT INTO reconciliation.state (country_id, code, name, active)
+VALUES
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'AL', 'Alabama', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'AK', 'Alaska', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'AZ', 'Arizona', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'AR', 'Arkansas', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'CA', 'California', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'CO', 'Colorado', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'CT', 'Connecticut', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'DE', 'Delaware', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'FL', 'Florida', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'GA', 'Georgia', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'HI', 'Hawaii', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'ID', 'Idaho', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'IL', 'Illinois', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'IN', 'Indiana', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'IA', 'Iowa', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'KS', 'Kansas', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'KY', 'Kentucky', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'LA', 'Louisiana', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'ME', 'Maine', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'MD', 'Maryland', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'MA', 'Massachusetts', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'MI', 'Michigan', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'MN', 'Minnesota', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'MS', 'Mississippi', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'MO', 'Missouri', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'MT', 'Montana', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'NE', 'Nebraska', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'NV', 'Nevada', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'NH', 'New Hampshire', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'NJ', 'New Jersey', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'NM', 'New Mexico', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'NY', 'New York', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'NC', 'North Carolina', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'ND', 'North Dakota', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'OH', 'Ohio', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'OK', 'Oklahoma', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'OR', 'Oregon', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'PA', 'Pennsylvania', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'RI', 'Rhode Island', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'SC', 'South Carolina', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'SD', 'South Dakota', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'TN', 'Tennessee', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'TX', 'Texas', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'UT', 'Utah', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'VT', 'Vermont', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'VA', 'Virginia', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'WA', 'Washington', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'WV', 'West Virginia', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'WI', 'Wisconsin', TRUE),
+((SELECT id FROM reconciliation.country WHERE code = 'US'), 'WY', 'Wyoming', TRUE)
+ON CONFLICT (country_id, code) DO UPDATE SET
+    name = EXCLUDED.name,
+    active = EXCLUDED.active;
+
+-- Alabama
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'AL' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Birmingham', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AL' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Montgomery', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AL' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Mobile', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AL' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Huntsville', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AL' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Tuscaloosa', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Alaska
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'AK' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Anchorage', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AK' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Fairbanks', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AK' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Juneau', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AK' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Sitka', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AK' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Ketchikan', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Arizona
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'AZ' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Phoenix', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AZ' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Tucson', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AZ' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Mesa', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AZ' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Chandler', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AZ' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Scottsdale', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Arkansas
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'AR' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Little Rock', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AR' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Fort Smith', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AR' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Fayetteville', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AR' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Springdale', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'AR' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Jonesboro', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- California
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'CA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Los Angeles', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'CA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'San Diego', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'CA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'San Jose', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'CA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'San Francisco', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'CA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Sacramento', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Colorado
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'CO' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Denver', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'CO' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Colorado Springs', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'CO' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Aurora', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'CO' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Fort Collins', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'CO' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Lakewood', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Connecticut
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'CT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Bridgeport', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'CT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'New Haven', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'CT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Stamford', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'CT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Hartford', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'CT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Waterbury', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Delaware
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'DE' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Wilmington', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'DE' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Dover', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'DE' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Newark', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'DE' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Middletown', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'DE' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Smyrna', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Florida
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'FL' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Jacksonville', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'FL' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Miami', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'FL' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Tampa', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'FL' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Orlando', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'FL' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Fort Lauderdale', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Georgia
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'GA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Atlanta', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'GA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Augusta', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'GA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Columbus', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'GA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Savannah', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'GA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Athens', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Hawaii
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'HI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Honolulu', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'HI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Hilo', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'HI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Kailua', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'HI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Kapolei', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'HI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Kaneohe', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Idaho
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'ID' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Boise', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'ID' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Meridian', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'ID' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Nampa', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'ID' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Idaho Falls', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'ID' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Pocatello', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Illinois
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'IL' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Chicago', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'IL' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Aurora', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'IL' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Naperville', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'IL' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Joliet', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'IL' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Rockford', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Indiana
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'IN' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Indianapolis', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'IN' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Fort Wayne', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'IN' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Evansville', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'IN' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'South Bend', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'IN' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Carmel', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Iowa
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'IA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Des Moines', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'IA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Cedar Rapids', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'IA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Davenport', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'IA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Sioux City', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'IA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Iowa City', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Kansas
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'KS' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Wichita', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'KS' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Overland Park', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'KS' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Kansas City', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'KS' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Olathe', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'KS' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Topeka', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Kentucky
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'KY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Louisville', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'KY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Lexington', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'KY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Bowling Green', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'KY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Owensboro', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'KY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Covington', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Louisiana
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'LA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'New Orleans', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'LA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Baton Rouge', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'LA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Shreveport', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'LA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Lafayette', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'LA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Lake Charles', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Maine
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'ME' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Portland', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'ME' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Lewiston', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'ME' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Bangor', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'ME' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'South Portland', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'ME' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Auburn', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Maryland
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'MD' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Baltimore', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MD' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Frederick', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MD' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Rockville', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MD' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Gaithersburg', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MD' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Bowie', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Massachusetts
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'MA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Boston', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Worcester', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Springfield', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Cambridge', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Lowell', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Michigan
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'MI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Detroit', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Grand Rapids', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Warren', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Sterling Heights', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Ann Arbor', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Minnesota
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'MN' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Minneapolis', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MN' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Saint Paul', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MN' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Rochester', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MN' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Duluth', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MN' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Bloomington', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Mississippi
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'MS' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Jackson', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MS' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Gulfport', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MS' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Southaven', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MS' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Biloxi', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MS' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Hattiesburg', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Missouri
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'MO' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Kansas City', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MO' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Saint Louis', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MO' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Springfield', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MO' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Columbia', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MO' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Independence', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Montana
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'MT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Billings', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Missoula', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Great Falls', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Bozeman', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'MT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Butte', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Nebraska
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'NE' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Omaha', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NE' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Lincoln', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NE' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Bellevue', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NE' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Grand Island', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NE' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Kearney', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Nevada
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'NV' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Las Vegas', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NV' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Henderson', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NV' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Reno', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NV' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'North Las Vegas', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NV' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Sparks', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- New Hampshire
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'NH' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Manchester', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NH' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Nashua', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NH' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Concord', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NH' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Dover', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NH' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Rochester', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- New Jersey
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'NJ' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Newark', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NJ' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Jersey City', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NJ' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Paterson', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NJ' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Elizabeth', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NJ' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Edison', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- New Mexico
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'NM' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Albuquerque', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NM' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Las Cruces', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NM' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Rio Rancho', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NM' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Santa Fe', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NM' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Roswell', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- New York
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'NY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'New York', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Buffalo', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Rochester', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Yonkers', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Syracuse', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- North Carolina
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'NC' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Charlotte', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NC' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Raleigh', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NC' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Greensboro', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NC' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Durham', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'NC' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Winston-Salem', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- North Dakota
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'ND' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Fargo', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'ND' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Bismarck', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'ND' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Grand Forks', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'ND' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Minot', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'ND' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'West Fargo', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Ohio
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'OH' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Columbus', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'OH' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Cleveland', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'OH' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Cincinnati', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'OH' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Toledo', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'OH' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Akron', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Oklahoma
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'OK' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Oklahoma City', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'OK' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Tulsa', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'OK' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Norman', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'OK' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Broken Arrow', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'OK' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Lawton', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Oregon
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'OR' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Portland', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'OR' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Eugene', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'OR' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Salem', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'OR' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Gresham', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'OR' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Hillsboro', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Pennsylvania
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'PA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Philadelphia', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'PA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Pittsburgh', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'PA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Allentown', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'PA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Erie', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'PA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Reading', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Rhode Island
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'RI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Providence', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'RI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Warwick', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'RI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Cranston', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'RI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Pawtucket', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'RI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'East Providence', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- South Carolina
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'SC' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Charleston', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'SC' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Columbia', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'SC' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'North Charleston', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'SC' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Mount Pleasant', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'SC' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Rock Hill', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- South Dakota
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'SD' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Sioux Falls', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'SD' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Rapid City', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'SD' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Aberdeen', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'SD' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Brookings', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'SD' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Watertown', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Tennessee
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'TN' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Nashville', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'TN' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Memphis', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'TN' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Knoxville', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'TN' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Chattanooga', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'TN' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Clarksville', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Texas
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'TX' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Houston', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'TX' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'San Antonio', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'TX' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Dallas', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'TX' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Austin', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'TX' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Fort Worth', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Utah
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'UT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Salt Lake City', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'UT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'West Valley City', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'UT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Provo', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'UT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'West Jordan', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'UT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Orem', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Vermont
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'VT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Burlington', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'VT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'South Burlington', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'VT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Rutland', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'VT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Barre', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'VT' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Montpelier', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Virginia
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'VA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Virginia Beach', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'VA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Chesapeake', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'VA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Norfolk', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'VA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Richmond', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'VA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Arlington', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Washington
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'WA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Seattle', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Spokane', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Tacoma', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Vancouver', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WA' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Bellevue', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- West Virginia
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'WV' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Charleston', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WV' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Huntington', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WV' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Morgantown', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WV' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Parkersburg', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WV' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Wheeling', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Wisconsin
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'WI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Milwaukee', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Madison', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Green Bay', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Kenosha', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WI' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Racine', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;
+
+-- Wyoming
+INSERT INTO reconciliation.city (state_id, name, active)
+VALUES
+((SELECT id FROM reconciliation.state WHERE code = 'WY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Cheyenne', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Casper', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Laramie', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Gillette', TRUE),
+((SELECT id FROM reconciliation.state WHERE code = 'WY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Rock Springs', TRUE)
+ON CONFLICT (state_id, name) DO UPDATE SET
+    active = EXCLUDED.active;

@@ -1,8 +1,9 @@
-    package com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.client;
+package com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.client;
 
-    import com.conciliaciones.reconciliation.core.application.port.in.client.CreateClientUseCase;
+import com.conciliaciones.reconciliation.core.application.port.in.client.CreateClientUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.client.DeleteClientUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.client.GetClientByIdUseCase;
+import com.conciliaciones.reconciliation.core.application.port.in.client.SearchClientsUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.client.ListClientsUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.client.UpdateClientUseCase;
 import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.client.ClientResponse;
@@ -32,6 +33,7 @@ import org.springframework.web.bind.annotation.*;
         private final ListClientsUseCase listClientsUseCase;
         private final UpdateClientUseCase updateClientUseCase;
         private final DeleteClientUseCase deleteClientUseCase;
+        private final SearchClientsUseCase searchClientsUseCase;
 
         @PostMapping
         @ResponseStatus(HttpStatus.CREATED)
@@ -73,5 +75,21 @@ import org.springframework.web.bind.annotation.*;
             deleteClientUseCase.delete(id);
             log.info("LOG FIN X = deleteClientController id={}", id);
         }
+
+        @GetMapping("/search")
+        public Page<ClientResponse> search(
+                @RequestParam(required = false) String externalClientId,
+                @RequestParam(required = false) String fullName,
+                Pageable pageable
+        ) {
+            log.info("LOG INICIO X = searchClientsController externalClientId={} fullName={}", externalClientId, fullName);
+
+            Page<ClientResponse> response = searchClientsUseCase.search(externalClientId, fullName, pageable);
+
+            log.info("LOG FIN X = searchClientsController totalElements={}", response.getTotalElements());
+            return response;
+        }
+
+
 
     }
