@@ -43,12 +43,16 @@ export class BackendAuthProvider extends AuthProviderPort {
 
     const payload = this.decodeJwtPayload(token);
     const user = this.extractUser(response, payload, username);
+    const refreshToken = this.extractRefreshToken(response);
     const expiresIn = this.extractExpiresIn(response, payload);
+    const expiresAt = this.extractExpiresAt(response, payload, expiresIn);
 
     const session: AuthSession = {
       token,
+      refreshToken,
       user,
-      expiresIn
+      expiresIn,
+      expiresAt
     };
 
     saveAuthSession(session);
@@ -56,8 +60,10 @@ export class BackendAuthProvider extends AuthProviderPort {
     return {
       success: true,
       token,
+      refreshToken,
       user,
-      expiresIn
+      expiresIn,
+      expiresAt
     };
   }
 
@@ -68,6 +74,13 @@ export class BackendAuthProvider extends AuthProviderPort {
       return {
         success: false,
         errorMessage: 'Credenciales inválidas. Verifique usuario y contraseña.'
+      };
+    }
+
+    if (error.status === 403) {
+      return {
+        success: false,
+        errorMessage: 'No tiene permisos para ingresar a la aplicación.'
       };
     }
 
@@ -97,6 +110,19 @@ export class BackendAuthProvider extends AuthProviderPort {
     return candidates.find((candidate) => typeof candidate === 'string' && candidate.trim().length > 0) ?? null;
   }
 
+  private extractRefreshToken(response: any): string | undefined {
+    const candidates = [
+      response?.refreshToken,
+      response?.refresh_token,
+      response?.data?.refreshToken,
+      response?.data?.refresh_token,
+      response?.result?.refreshToken,
+      response?.result?.refresh_token
+    ];
+
+    return candidates.find((candidate) => typeof candidate === 'string' && candidate.trim().length > 0);
+  }
+
   private extractExpiresIn(response: any, payload: any): number | undefined {
     const explicit = response?.expiresIn ?? response?.expires_in ?? response?.data?.expiresIn ?? response?.data?.expires_in;
     if (typeof explicit === 'number') {
@@ -105,6 +131,23 @@ export class BackendAuthProvider extends AuthProviderPort {
 
     if (typeof payload?.exp === 'number' && typeof payload?.iat === 'number') {
       return payload.exp - payload.iat;
+    }
+
+    return undefined;
+  }
+
+  private extractExpiresAt(response: any, payload: any, expiresIn?: number): number | undefined {
+    const explicit = response?.expiresAt ?? response?.expires_at ?? response?.data?.expiresAt ?? response?.data?.expires_at;
+    if (typeof explicit === 'number') {
+      return explicit > 10_000_000_000 ? explicit : explicit * 1000;
+    }
+
+    if (typeof payload?.exp === 'number') {
+      return payload.exp * 1000;
+    }
+
+    if (typeof expiresIn === 'number') {
+      return Date.now() + expiresIn * 1000;
     }
 
     return undefined;
@@ -159,7 +202,11 @@ export class BackendAuthProvider extends AuthProviderPort {
       }
 
       const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-      const decoded = atob(normalized);
+      const padded = normalized.padEnd(
+        normalized.length + (4 - (normalized.length % 4)) % 4,
+        '='
+      );
+      const decoded = atob(padded);
       return JSON.parse(decoded);
     } catch {
       return {};

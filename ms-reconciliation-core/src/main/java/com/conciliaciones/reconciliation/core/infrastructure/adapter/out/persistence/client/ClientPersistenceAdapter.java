@@ -42,6 +42,24 @@ public class ClientPersistenceAdapter implements ClientPersistencePort {
     }
 
     @Override
+    public Page<ClientEntity> search(String externalClientId, String fullName, Pageable pageable) {
+        log.info("LOG INICIO X = searchClientPersistence externalClientId={} fullName={}", externalClientId, fullName);
+
+        String externalClientIdFilter = externalClientId == null ? "" : externalClientId.trim();
+        String fullNameFilter = fullName == null ? "" : fullName.trim();
+
+        Page<ClientEntity> result = repository
+                .findByExternalClientIdContainingIgnoreCaseOrFullNameContainingIgnoreCase(
+                        externalClientIdFilter,
+                        fullNameFilter,
+                        pageable
+                );
+
+        log.info("LOG FIN X = searchClientPersistence totalElements={}", result.getTotalElements());
+        return result;
+    }
+
+    @Override
     public void deleteById(Long id) {
         log.info("LOG INICIO X = deleteClientPersistence id={}", id);
         repository.deleteById(id);

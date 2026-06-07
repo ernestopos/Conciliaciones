@@ -13,30 +13,6 @@ CREATE TABLE IF NOT EXISTS security_audit_log (
 );
 
 -- =========================================================
--- LIMPIEZA OPCIONAL PARA REEJECUTAR PRUEBAS
--- =========================================================
-DELETE FROM scheduled_task;
-DELETE FROM execution_plan_task;
-DELETE FROM security_audit_log;
-DELETE FROM commission_payment_detail;
-DELETE FROM commission_payment;
-DELETE FROM reconciliation_case;
-DELETE FROM commission_statement_item;
-DELETE FROM commission_statement;
-DELETE FROM commission_rule;
-DELETE FROM commission_assignment;
-DELETE FROM policy_status_history;
-DELETE FROM policy_plan;
-DELETE FROM policy;
-DELETE FROM raw_import_record;
-DELETE FROM source_file_sheet;
-DELETE FROM source_file;
-DELETE FROM client;
-DELETE FROM producer;
-DELETE FROM agency;
-
-
--- =========================================================
 -- EXECUTION PIPELINE ENGINE - PARAMETERS
 -- =========================================================
 

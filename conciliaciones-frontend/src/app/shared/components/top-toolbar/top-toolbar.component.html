@@ -1,8 +1,49 @@
 <header class="toolbar">
-  <button mat-icon-button type="button" (click)="menuToggle.emit()"><mat-icon>menu</mat-icon></button>
+  <button mat-icon-button type="button" (click)="menuToggle.emit()" aria-label="Abrir menú">
+    <mat-icon>menu</mat-icon>
+  </button>
+
   <div class="title">Conciliaciones</div>
+
   <div class="actions">
-    <span>{{ userName }}</span>
-    <button mat-icon-button type="button" (click)="logoutClick.emit()"><mat-icon>logout</mat-icon></button>
+    <button
+      mat-button
+      type="button"
+      class="user-menu-trigger"
+      [matMenuTriggerFor]="userMenu"
+      aria-label="Abrir menú de usuario">
+      <mat-icon>person_outline</mat-icon>
+      <span>{{ userName }}</span>
+      <mat-icon class="chevron">expand_more</mat-icon>
+    </button>
   </div>
 </header>
+
+<mat-menu #userMenu="matMenu" xPosition="before" class="user-menu-panel">
+  <button mat-menu-item [matMenuTriggerFor]="settingsMenu">
+    <mat-icon>settings</mat-icon>
+    <span>Configuración</span>
+    <mat-icon class="submenu-icon">chevron_right</mat-icon>
+  </button>
+
+  <button mat-menu-item type="button" (click)="logoutClick.emit()">
+    <mat-icon>logout</mat-icon>
+    <span>Salir del sistema</span>
+  </button>
+</mat-menu>
+
+<mat-menu #settingsMenu="matMenu" xPosition="before" class="theme-menu-panel">
+  <button class="menu-title" mat-menu-item disabled type="button">Themes</button>
+
+  <button mat-menu-item type="button" (click)="setTheme('light')">
+    <mat-icon>light_mode</mat-icon>
+    <span>Claro</span>
+    <mat-icon class="selected-icon" *ngIf="currentTheme() === 'light'">check</mat-icon>
+  </button>
+
+  <button mat-menu-item type="button" (click)="setTheme('dark')">
+    <mat-icon>dark_mode</mat-icon>
+    <span>Oscuro</span>
+    <mat-icon class="selected-icon" *ngIf="currentTheme() === 'dark'">check</mat-icon>
+  </button>
+</mat-menu>

@@ -2,6 +2,7 @@ package com.conciliaciones.persistence.repository;
 
 import com.conciliaciones.persistence.jpa.entity.SourceFileValidationEntity;
 import com.conciliaciones.persistence.projection.ValidationExecutionDetailView;
+import com.conciliaciones.persistence.repository.projection.SourceFileValidationDetailProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -51,5 +52,25 @@ public interface SourceFileValidationRepository extends JpaRepository<SourceFile
             ORDER BY sfv.id
             """, nativeQuery = true)
     List<ValidationExecutionDetailView> findValidationExecutionDetailBySourceFileId(@Param("sourceFileId") Long sourceFileId);
+
+    @Query("""
+    SELECT
+        vsp.startedAt AS startedAt,
+        vsp.finishedAt AS finishedAt,
+        vsp.successful AS successful,
+        sfv.message AS message,
+        sfv.validationTypeId.description AS validationTypeDescription,
+        vs.description AS validationStatusDescription
+    FROM SourceFileValidationEntity sfv
+    JOIN sfv.validationSourcePlan vsp
+    JOIN ParameterEntity vs ON vs.id = sfv.validationStatusId
+    WHERE vsp.sourceFile.id = (
+        SELECT ept.sourceFile.id
+        FROM ExecutionPlanTaskEntity ept
+        WHERE ept.id = :executionPlanTaskId
+    )
+    ORDER BY sfv.id ASC
+""")
+    List<SourceFileValidationDetailProjection> findValidationDetailByExecutionPlanTaskId(@Param("executionPlanTaskId") Long executionPlanTaskId);
 
 }

@@ -103,7 +103,11 @@ export class ProcessingExecutionDetailPageComponent implements OnInit, OnDestroy
   }
 
   canShowValidationDetail(task: ScheduledTaskStepModel): boolean {
-    return this.normalizeStatus(task.taskTypeName) === 'START_VALIDATE_DATA';
+    const taskType = this.normalizeStatus(task.taskTypeName);
+    const taskStatus = this.normalizeStatus(task.statusName);
+
+    return taskType === 'START_VALIDATE_DATA'
+      && (this.isCompletedStatus(taskStatus) || this.isFailedStatus(taskStatus));
   }
 
   display(value: unknown): string {

@@ -9,5 +9,7 @@ import java.util.Optional;
 public interface ParameterRepository extends JpaRepository<ParameterEntity, Long> {
     Optional<ParameterEntity> findByParameterGroupAndNameAndActiveTrue(String parameterGroup, String name);
 
+    Optional<ParameterEntity> findByParameterGroupAndValueAndActiveTrue(String parameterGroup, String name);
+
     List<ParameterEntity> findByParameterGroupAndActiveTrueOrderBySortOrderAsc(String parameterGroup);
 }

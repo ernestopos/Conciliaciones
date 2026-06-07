@@ -9,5 +9,6 @@ public interface ClientPersistencePort {
     ClientEntity save(ClientEntity entity);
     Optional<ClientEntity> findById(Long id);
     Page<ClientEntity> findAll(Pageable pageable);
+    Page<ClientEntity> search(String externalClientId, String fullName, Pageable pageable);
     void deleteById(Long id);
 }
