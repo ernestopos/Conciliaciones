@@ -1815,3 +1815,6 @@ VALUES
 ((SELECT id FROM reconciliation.state WHERE code = 'WY' AND country_id = (SELECT id FROM reconciliation.country WHERE code = 'US')), 'Rock Springs', TRUE)
 ON CONFLICT (state_id, name) DO UPDATE SET
     active = EXCLUDED.active;
+
+-- Migrations
+ALTER TABLE reconciliation.commission_statement ALTER COLUMN source_file_id DROP NOT NULL;

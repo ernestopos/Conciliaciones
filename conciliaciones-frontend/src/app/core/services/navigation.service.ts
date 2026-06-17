@@ -27,7 +27,8 @@ export class NavigationService {
       children: [
         { label: 'Archivos fuente', icon: 'upload_file', route: '/conciliacion/source-files' },
         { label: 'Ejecuciones', icon: 'sync', route: '/conciliacion/processing-executions' },
-        { label: 'Casos de conciliación', icon: 'fact_check', route: '/conciliacion/casos' }
+        { label: 'Casos de conciliación', icon: 'fact_check', route: '/conciliacion/casos' },
+        { label: 'Conciliación manual', icon: 'edit_note', route: '/conciliacion/manual' }
       ]
     },
     {

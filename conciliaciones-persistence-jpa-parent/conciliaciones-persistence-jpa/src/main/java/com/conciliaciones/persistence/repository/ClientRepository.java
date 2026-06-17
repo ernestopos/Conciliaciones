@@ -7,7 +7,19 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ClientRepository extends JpaRepository<ClientEntity, Long> {
 
-    Page<ClientEntity> findByExternalClientIdContainingIgnoreCaseOrFullNameContainingIgnoreCase(
+    Page<ClientEntity> findByActiveTrue(Pageable pageable);
+
+    Page<ClientEntity> findByActiveTrueAndExternalClientIdContainingIgnoreCase(
+            String externalClientId,
+            Pageable pageable
+    );
+
+    Page<ClientEntity> findByActiveTrueAndFullNameContainingIgnoreCase(
+            String fullName,
+            Pageable pageable
+    );
+
+    Page<ClientEntity> findByActiveTrueAndExternalClientIdContainingIgnoreCaseOrActiveTrueAndFullNameContainingIgnoreCase(
             String externalClientId,
             String fullName,
             Pageable pageable

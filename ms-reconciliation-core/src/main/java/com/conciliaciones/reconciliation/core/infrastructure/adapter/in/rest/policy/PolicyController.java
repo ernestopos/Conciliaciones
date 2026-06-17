@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -55,7 +57,9 @@ public class PolicyController {
     }
 
     @GetMapping
-    public Page<PolicyResponse> list(Pageable pageable) {
+    public Page<PolicyResponse> list(
+            @PageableDefault(size = 1000, sort = "id", direction = Sort.Direction.ASC) Pageable pageable
+    ) {
         log.info("LOG INICIO X = listPoliciesController page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
 
         Page<PolicyResponse> response = listPoliciesUseCase.list(pageable);
