@@ -3,6 +3,7 @@
     import com.conciliaciones.reconciliation.core.application.port.in.parameter.CreateParameterUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.parameter.DeleteParameterUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.parameter.GetParameterByIdUseCase;
+import com.conciliaciones.reconciliation.core.application.port.in.parameter.ListParametersByGroupUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.parameter.ListParametersUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.parameter.UpdateParameterUseCase;
 import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.parameter.CreateParameterRequest;
@@ -12,6 +13,7 @@ import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.sup
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +32,7 @@ import org.springframework.web.bind.annotation.*;
         private final CreateParameterUseCase createParameterUseCase;
         private final GetParameterByIdUseCase getParameterByIdUseCase;
         private final ListParametersUseCase listParametersUseCase;
+        private final ListParametersByGroupUseCase listParametersByGroupUseCase;
         private final UpdateParameterUseCase updateParameterUseCase;
         private final DeleteParameterUseCase deleteParameterUseCase;
 
@@ -55,6 +58,14 @@ import org.springframework.web.bind.annotation.*;
             log.info("LOG INICIO X = listParametersController page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
             Page<ParameterResponse> response = listParametersUseCase.list(pageable);
             log.info("LOG FIN X = listParametersController totalElements={}", response.getTotalElements());
+            return response;
+        }
+
+        @GetMapping("/by-group/{parameterGroup}")
+        public List<ParameterResponse> listByGroup(@PathVariable String parameterGroup) {
+            log.info("LOG INICIO X = listParametersByGroupController parameterGroup={}", parameterGroup);
+            List<ParameterResponse> response = listParametersByGroupUseCase.listByGroup(parameterGroup);
+            log.info("LOG FIN X = listParametersByGroupController totalElements={}", response.size());
             return response;
         }
 

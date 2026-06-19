@@ -21,6 +21,7 @@ public class ClientPersistenceAdapter implements ClientPersistencePort {
     public ClientEntity save(ClientEntity entity) {
         log.info("LOG INICIO X = saveClientPersistence");
         ClientEntity saved = repository.save(entity);
+        repository.flush();
         log.info("LOG FIN X = saveClientPersistence id={}", saved.getId());
         return saved;
     }
@@ -43,20 +44,39 @@ public class ClientPersistenceAdapter implements ClientPersistencePort {
 
     @Override
     public Page<ClientEntity> search(String externalClientId, String fullName, Pageable pageable) {
-        log.info("LOG INICIO X = searchClientPersistence externalClientId={} fullName={}", externalClientId, fullName);
+        String externalClientIdFilter = normalizeFilter(externalClientId);
+        String fullNameFilter = normalizeFilter(fullName);
 
-        String externalClientIdFilter = externalClientId == null ? "" : externalClientId.trim();
-        String fullNameFilter = fullName == null ? "" : fullName.trim();
+        if (externalClientIdFilter == null && fullNameFilter == null) {
+            return repository.findByActiveTrue(pageable);
+        }
 
-        Page<ClientEntity> result = repository
-                .findByExternalClientIdContainingIgnoreCaseOrFullNameContainingIgnoreCase(
-                        externalClientIdFilter,
-                        fullNameFilter,
-                        pageable
-                );
+        if (externalClientIdFilter != null && fullNameFilter == null) {
+            return repository.findByActiveTrueAndExternalClientIdContainingIgnoreCase(
+                    externalClientIdFilter,
+                    pageable
+            );
+        }
 
-        log.info("LOG FIN X = searchClientPersistence totalElements={}", result.getTotalElements());
-        return result;
+        if (externalClientIdFilter == null) {
+            return repository.findByActiveTrueAndFullNameContainingIgnoreCase(
+                    fullNameFilter,
+                    pageable
+            );
+        }
+
+        return repository.findByActiveTrueAndExternalClientIdContainingIgnoreCaseOrActiveTrueAndFullNameContainingIgnoreCase(
+                externalClientIdFilter,
+                fullNameFilter,
+                pageable
+        );
+    }
+
+    private String normalizeFilter(String value) {
+        if (value == null || value.trim().isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     @Override

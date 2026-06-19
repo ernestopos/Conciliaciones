@@ -1,0 +1,91 @@
+<!-- Created with Jaspersoft Studio version 7.0.6.final using JasperReports Library version 7.0.6 -->
+<jasperReport name="PaymentForEachProducer" language="java" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="0" uuid="e115bc59-fd0f-446b-a585-04725e27d7f0">
+    <property name="com.jaspersoft.studio.data.defaultdataadapter" value="ConciliacionesDB"/>
+    <style name="Title" fontName="SansSerif" fontSize="26.0" bold="true"/>
+    <style name="SubTitle" forecolor="#666666" fontName="SansSerif" fontSize="18.0"/>
+    <style name="Column header" forecolor="#FFFFFF" fontName="SansSerif" fontSize="11.0" bold="true"/>
+    <style name="Detail" fontName="SansSerif" fontSize="10.0"/>
+
+    <query language="sql"><![CDATA[
+SELECT
+    pr.full_name AS producerName,
+    p.policyNumber AS policyNumber,
+    csi.net_amount AS policyAmount,
+    csi.rate AS commissionRate,
+    csi.commissionRate_pct AS producerRate,
+    csi.commissionAmount AS commissionAmount,
+    cpd.amount AS paymentAmount
+FROM reconciliation.commission_payment_detail cpd
+INNER JOIN reconciliation.policy p
+    ON p.id = cpd.policy_id
+INNER JOIN reconciliation.commission_statement_item csi
+    ON csi.id = cpd.commission_statement_item_id
+INNER JOIN reconciliation.commission_statement cms
+    ON cms.id = csi.commission_statement_id
+LEFT JOIN reconciliation.producer pr
+    ON pr.id = cms.producer_id
+ORDER BY cpd.id DESC
+LIMIT 100
+    ]]></query>
+
+    <field name="producerName" class="java.lang.String"/>
+    <field name="policyNumber" class="java.lang.String"/>
+    <field name="policyAmount" class="java.math.BigDecimal"/>
+    <field name="commissionRate" class="java.math.BigDecimal"/>
+    <field name="producerRate" class="java.math.BigDecimal"/>
+    <field name="commissionAmount" class="java.math.BigDecimal"/>
+    <field name="paymentAmount" class="java.math.BigDecimal"/>
+
+
+    <variable name="PAGE_PAYMENT_TOTAL" class="java.math.BigDecimal" calculation="Sum" resetType="Page">
+        <expression><![CDATA[$F{paymentAmount}]]></expression>
+        <initialValueExpression><![CDATA[java.math.BigDecimal.ZERO]]></initialValueExpression>
+    </variable>
+
+    <title height="85" splitType="Stretch">
+        <element kind="staticText" uuid="1dcadd54-7d50-4470-85ed-189e4d910b25" x="0" y="0" width="802" height="50" fontSize="34.0" bold="true" hTextAlign="Right" vTextAlign="Middle" style="Title">
+            <text><![CDATA[Reporte de Comisiones]]></text>
+        </element>
+        <element kind="staticText" uuid="862cb50c-5a5e-4906-a495-226e25115fb6" x="232" y="50" width="568" height="30" fontSize="18.0" hTextAlign="Right" style="SubTitle">
+            <text><![CDATA[Pago de comisiones por productor]]></text>
+        </element>
+    </title>
+
+    <columnHeader height="30" splitType="Stretch">
+        <element kind="frame" uuid="35d90a9b-bb7e-4ec4-bfa2-68be1967d6b2" mode="Opaque" x="0" y="5" width="802" height="22" backcolor="#666666"/>
+        <element kind="staticText" uuid="6d9a92cd-0ab8-4ac8-9c76-14617e20b0c6" x="5" y="7" width="170" height="18" forecolor="#FFFFFF" style="Column header"><text><![CDATA[Productor]]></text></element>
+        <element kind="staticText" uuid="bdde79ea-4c79-4b39-8773-0efc98ac14ed" x="180" y="7" width="115" height="18" forecolor="#FFFFFF" style="Column header"><text><![CDATA[Póliza]]></text></element>
+        <element kind="staticText" uuid="c1f4f3e1-a083-49cb-a262-3b60a887e76f" x="300" y="7" width="95" height="18" forecolor="#FFFFFF" hTextAlign="Right" style="Column header"><text><![CDATA[Valor póliza]]></text></element>
+        <element kind="staticText" uuid="c2f4f3e1-a083-49cb-a262-3b60a887e76f" x="405" y="7" width="95" height="18" forecolor="#FFFFFF" hTextAlign="Right" style="Column header"><text><![CDATA[Rate]]></text></element>
+        <element kind="staticText" uuid="c3f4f3e1-a083-49cb-a262-3b60a887e76f" x="505" y="7" width="95" height="18" forecolor="#FFFFFF" hTextAlign="Right" style="Column header"><text><![CDATA[% Productor]]></text></element>
+        <element kind="staticText" uuid="c4f4f3e1-a083-49cb-a262-3b60a887e76f" x="605" y="7" width="95" height="18" forecolor="#FFFFFF" hTextAlign="Right" style="Column header"><text><![CDATA[Comisión]]></text></element>
+        <element kind="staticText" uuid="c5f4f3e1-a083-49cb-a262-3b60a887e76f" x="705" y="7" width="92" height="18" forecolor="#FFFFFF" hTextAlign="Right" style="Column header"><text><![CDATA[Pago]]></text></element>
+    </columnHeader>
+
+    <detail>
+        <band height="22" splitType="Stretch">
+            <element kind="textField" uuid="d1f4f3e1-a083-49cb-a262-3b60a887e76f" x="5" y="1" width="170" height="16" style="Detail"><expression><![CDATA[$F{producerName}]]></expression></element>
+            <element kind="textField" uuid="d2f4f3e1-a083-49cb-a262-3b60a887e76f" x="180" y="1" width="115" height="16" style="Detail"><expression><![CDATA[$F{policyNumber}]]></expression></element>
+            <element kind="textField" uuid="d3f4f3e1-a083-49cb-a262-3b60a887e76f" x="300" y="1" width="95" height="16" pattern="#,##0.00" hTextAlign="Right" style="Detail"><expression><![CDATA[$F{policyAmount}]]></expression></element>
+            <element kind="textField" uuid="d4f4f3e1-a083-49cb-a262-3b60a887e76f" x="405" y="1" width="95" height="16" pattern="#,##0.0000" hTextAlign="Right" style="Detail"><expression><![CDATA[$F{commissionRate}]]></expression></element>
+            <element kind="textField" uuid="d5f4f3e1-a083-49cb-a262-3b60a887e76f" x="505" y="1" width="95" height="16" pattern="#,##0.00%" hTextAlign="Right" style="Detail"><expression><![CDATA[$F{producerRate} == null ? null : $F{producerRate}.divide(new java.math.BigDecimal("100"))]]></expression></element>
+            <element kind="textField" uuid="d6f4f3e1-a083-49cb-a262-3b60a887e76f" x="605" y="1" width="95" height="16" pattern="#,##0.00" hTextAlign="Right" style="Detail"><expression><![CDATA[$F{commissionAmount}]]></expression></element>
+            <element kind="textField" uuid="d7f4f3e1-a083-49cb-a262-3b60a887e76f" x="705" y="1" width="92" height="16" pattern="#,##0.00" hTextAlign="Right" style="Detail"><expression><![CDATA[$F{paymentAmount}]]></expression></element>
+            <element kind="line" uuid="e5f21b91-7f24-498e-97a1-0e93db9225a4" x="0" y="20" width="802" height="1"><pen lineWidth="0.5" lineColor="#999999"/></element>
+        </band>
+    </detail>
+
+    <pageFooter height="45" splitType="Stretch">
+        <element kind="line" uuid="bb5f4974-baf9-46de-8c0a-594ebc270005" x="0" y="0" width="802" height="1">
+            <pen lineWidth="0.75" lineColor="#666666"/>
+        </element>
+        <element kind="staticText" uuid="aa5f4974-baf9-46de-8c0a-594ebc270001" x="605" y="5" width="95" height="18" bold="true" hTextAlign="Right" style="Detail">
+            <text><![CDATA[Total pagos:]]></text>
+        </element>
+        <element kind="textField" uuid="aa5f4974-baf9-46de-8c0a-594ebc270002" x="705" y="5" width="92" height="18" pattern="#,##0.00" bold="true" hTextAlign="Right" style="Detail">
+            <expression><![CDATA[$V{PAGE_PAYMENT_TOTAL}]]></expression>
+        </element>
+        <element kind="staticText" uuid="0ec52099-dcd7-42f4-8baa-f3874f05208a" x="0" y="25" width="267" height="20" fontSize="10.0"><text><![CDATA[Reporte de Comisiones]]></text></element>
+        <element kind="textField" uuid="95484ca0-40b4-4752-95d8-1afbc33c820b" x="650" y="25" width="152" height="20" fontSize="10.0" pattern="dd/MM/yyyy HH:mm" hTextAlign="Right"><expression><![CDATA[new java.util.Date()]]></expression></element>
+    </pageFooter>
+</jasperReport>

@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { CommissionPayment, RecalculateCommissionPaymentRequest } from '../../../models/commission-payment.model';
 import { CommissionPaymentService } from '../../../services/commission-payment.service';
@@ -21,6 +22,7 @@ import { CommissionPaymentService } from '../../../services/commission-payment.s
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatCheckboxModule,
     MatSnackBarModule
   ],
   template: `
@@ -60,6 +62,10 @@ import { CommissionPaymentService } from '../../../services/commission-payment.s
           <input matInput type="number" min="0.01" step="0.01" formControlName="commissionRatePct" />
           <mat-error>Debe ingresar un valor mayor a cero</mat-error>
         </mat-form-field>
+
+        <mat-checkbox class="included-check" formControlName="includedForPayment">
+          Pago incluido
+        </mat-checkbox>
       </form>
 
       <div class="preview">
@@ -81,6 +87,7 @@ import { CommissionPaymentService } from '../../../services/commission-payment.s
     `.summary>div{background:rgba(0,0,0,.03);border-radius:10px;padding:10px 12px}`,
     `.summary-label{display:block;font-size:12px;opacity:.72;margin-bottom:4px}`,
     `.recalculate-form{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:12px;padding-top:4px}`,
+    `.included-check{align-self:center;margin-left:4px}`,
     `.preview{display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(0,0,0,.12);margin-top:8px;padding-top:14px;font-size:16px}`,
     `.preview strong{font-size:20px}`,
     `@media(max-width:760px){.summary,.recalculate-form{grid-template-columns:1fr}}`
@@ -92,7 +99,8 @@ export class CommissionPaymentRecalculateDialogComponent {
   readonly form = this.fb.group({
     netAmount: [this.toNumber(this.data.payment.netAmount), [Validators.required, Validators.min(0.01)]],
     rate: [this.toNumber(this.data.payment.rate), [Validators.required, Validators.min(0.01)]],
-    commissionRatePct: [this.toNumber(this.data.payment.commissionRatePct), [Validators.required, Validators.min(0.01)]]
+    commissionRatePct: [this.toNumber(this.data.payment.commissionRatePct), [Validators.required, Validators.min(0.01)]],
+    includedForPayment: [this.data.payment.includedForPayment === true]
   });
 
   constructor(
@@ -124,7 +132,8 @@ export class CommissionPaymentRecalculateDialogComponent {
     const request: RecalculateCommissionPaymentRequest = {
       netAmount: this.toNumber(this.form.controls.netAmount.value),
       rate: this.toNumber(this.form.controls.rate.value),
-      commissionRatePct: this.toNumber(this.form.controls.commissionRatePct.value)
+      commissionRatePct: this.toNumber(this.form.controls.commissionRatePct.value),
+      includedForPayment: this.form.controls.includedForPayment.value === true
     };
 
     this.saving = true;

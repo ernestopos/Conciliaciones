@@ -12,6 +12,9 @@ import { CrudRouteConfig } from './core/models/crud.models';
 import { UploadSourcesFilePageComponent } from './features/upload-files/upload-sources-file/upload-sources-file-page.component';
 import { PoliciesPageComponent } from './features/maestros/policies/policies-page.component';
 import { CommissionPaymentsPageComponent } from './features/pagos/liquidaciones/commission-payments-page.component';
+import { CommissionReconciliationsPageComponent } from './features/conciliacion/commission-reconciliations/commission-reconciliations-page.component';
+import { ManualCommissionPageComponent } from './features/conciliacion/manual-commission/manual-commission-page.component';
+import { ReportsPageComponent } from './features/reportes/reports-page.component';
 
 const agencyCrudConfig: CrudRouteConfig = {
   resourceKey: 'agencies',
@@ -155,10 +158,11 @@ export const routes: Routes = [
       { path: 'maestros/parametros', component: CrudEntityPageComponent, data: { crudConfig: parameterCrudConfig } },
       { path: 'maestros/estados-poliza', component: DomainPlaceholderComponent, data: { title: 'Estados de Póliza' } },
       { path: 'maestros/reglas-comision', component: DomainPlaceholderComponent, data: { title: 'Reglas de Comisión' } },
-      { path: 'conciliacion/casos', component: CrudEntityPageComponent, data: { crudConfig: reconciliationCaseCrudConfig } },
+      { path: 'conciliacion/casos', component: CommissionReconciliationsPageComponent },
+      { path: 'conciliacion/manual', component: ManualCommissionPageComponent },
       { path: 'pagos/liquidaciones', component: CommissionPaymentsPageComponent },
       { path: 'auditoria/registros', component: DomainPlaceholderComponent, data: { title: 'Auditoría' } },
-      { path: 'reportes', component: DomainPlaceholderComponent, data: { title: 'Reportes' } },
+      { path: 'reportes', component: ReportsPageComponent },
       { path: 'upload-files/upload-sources-file',  component: UploadSourcesFilePageComponent },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' }
     ]

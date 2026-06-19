@@ -72,17 +72,16 @@ import com.conciliaciones.reconciliation.core.application.port.in.client.SearchC
             ClientEntity entity = persistencePort.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Client no encontrado con id: " + id));
 
-        entity.setExternalClientId(request.externalClientId());
-        entity.setFirstName(request.firstName());
-        entity.setMiddleName(request.middleName());
-        entity.setLastName(request.lastName());
-        entity.setFullName(request.fullName());
-        entity.setBirthDate(request.birthDate());
-        entity.setState(request.state());
-        entity.setActive(request.active());
+            entity.setExternalClientId(request.externalClientId());
+            entity.setFirstName(request.firstName());
+            entity.setMiddleName(request.middleName());
+            entity.setLastName(request.lastName());
+            entity.setFullName(request.fullName());
+            entity.setBirthDate(request.birthDate());
+            entity.setState(request.state());
+            entity.setActive(request.active());
             entity.setUpdatedAt(LocalDateTime.now());
             entity.setUpdatedBy(username);
-
             ClientEntity saved = persistencePort.save(entity);
             log.info("LOG FIN X = updateClient id={}", saved.getId());
             return toResponse(saved);

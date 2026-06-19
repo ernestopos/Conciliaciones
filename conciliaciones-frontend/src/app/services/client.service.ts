@@ -13,6 +13,17 @@ export class ClientService extends BaseCrudHttpService<Client> {
     super(http, '/clients');
   }
 
+  override list(): Observable<Client[]> {
+  const params = new HttpParams()
+    .set('page', '0')
+    .set('size', '1000')
+    .set('sort', 'id,asc');
+
+  return this.http
+    .get<unknown>(`${environment.api.core}/clients`, { params })
+    .pipe(map((response) => normalizeCollectionResponse<Client>(response)));
+}
+
   search(externalClientId?: string, fullName?: string): Observable<Client[]> {
     let params = new HttpParams().set('page', '0').set('size', '10');
 
