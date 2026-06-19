@@ -14,6 +14,7 @@ import { PoliciesPageComponent } from './features/maestros/policies/policies-pag
 import { CommissionPaymentsPageComponent } from './features/pagos/liquidaciones/commission-payments-page.component';
 import { CommissionReconciliationsPageComponent } from './features/conciliacion/commission-reconciliations/commission-reconciliations-page.component';
 import { ManualCommissionPageComponent } from './features/conciliacion/manual-commission/manual-commission-page.component';
+import { ReportsPageComponent } from './features/reportes/reports-page.component';
 
 const agencyCrudConfig: CrudRouteConfig = {
   resourceKey: 'agencies',
@@ -161,7 +162,7 @@ export const routes: Routes = [
       { path: 'conciliacion/manual', component: ManualCommissionPageComponent },
       { path: 'pagos/liquidaciones', component: CommissionPaymentsPageComponent },
       { path: 'auditoria/registros', component: DomainPlaceholderComponent, data: { title: 'Auditoría' } },
-      { path: 'reportes', component: DomainPlaceholderComponent, data: { title: 'Reportes' } },
+      { path: 'reportes', component: ReportsPageComponent },
       { path: 'upload-files/upload-sources-file',  component: UploadSourcesFilePageComponent },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' }
     ]

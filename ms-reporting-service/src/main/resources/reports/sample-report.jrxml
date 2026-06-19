@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="sample-report" pageWidth="595" pageHeight="842" columnWidth="515" leftMargin="40" rightMargin="40" topMargin="40" bottomMargin="40">
+    <parameter name="REPORT_TITLE" class="java.lang.String"/>
+    <parameter name="FROM_DATE" class="java.time.LocalDate"/>
+    <parameter name="TO_DATE" class="java.time.LocalDate"/>
+    <field name="message" class="java.lang.String"/>
+    <field name="generatedAt" class="java.lang.String"/>
+    <title>
+        <band height="70">
+            <staticText>
+                <reportElement x="0" y="0" width="515" height="24"/>
+                <textElement textAlignment="Center">
+                    <font size="16" isBold="true"/>
+                </textElement>
+                <text><![CDATA[Conciliaciones - Reporte Jasper]]></text>
+            </staticText>
+            <textField>
+                <reportElement x="0" y="32" width="515" height="20"/>
+                <textElement textAlignment="Center"/>
+                <textFieldExpression><![CDATA[$P{REPORT_TITLE}]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+    <detail>
+        <band height="60">
+            <textField>
+                <reportElement x="0" y="0" width="515" height="20"/>
+                <textFieldExpression><![CDATA[$F{message}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="25" width="515" height="20"/>
+                <textFieldExpression><![CDATA["Generado: " + $F{generatedAt}]]></textFieldExpression>
+            </textField>
+        </band>
+    </detail>
+</jasperReport>

@@ -101,3 +101,19 @@ active = EXCLUDED.active,
 sort_order = EXCLUDED.sort_order,
 updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
+
+-- =========================================================
+-- REPORTING SERVICE
+-- =========================================================
+INSERT INTO parameter (
+    id,
+    name,
+    description,
+    value,
+    parameter_group,
+    active,
+    sort_order,
+    created_by
+)
+VALUES
+(126, 'COMISIONES', 'REPORTE DE COMISIONES', 'PaymentForEachProducer', 'REPORTING_SERVICES', TRUE, 1, 'seed');

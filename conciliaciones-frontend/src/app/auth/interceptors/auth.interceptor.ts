@@ -11,7 +11,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   const isProtectedBackendRequest =
     req.url.startsWith(environment.api.core) ||
-    req.url.startsWith(environment.api.fileManagement);
+    req.url.startsWith(environment.api.fileManagement) ||
+    req.url.startsWith(environment.api.reporting);
 
   const authReq = token && isProtectedBackendRequest
     ? req.clone({

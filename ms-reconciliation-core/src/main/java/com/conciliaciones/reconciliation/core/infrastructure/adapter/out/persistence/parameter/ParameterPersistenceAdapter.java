@@ -3,6 +3,7 @@ package com.conciliaciones.reconciliation.core.infrastructure.adapter.out.persis
 import com.conciliaciones.domain.entity.ParameterEntity;
 import com.conciliaciones.persistence.repository.ParameterRepository;
 import com.conciliaciones.reconciliation.core.application.port.out.parameter.ParameterPersistencePort;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,14 @@ public class ParameterPersistenceAdapter implements ParameterPersistencePort {
         log.info("LOG INICIO X = findAllParameterPersistence");
         Page<ParameterEntity> result = repository.findAll(pageable);
         log.info("LOG FIN X = findAllParameterPersistence totalElements={}", result.getTotalElements());
+        return result;
+    }
+
+    @Override
+    public List<ParameterEntity> findByParameterGroupAndActiveTrueOrderBySortOrderAsc(String parameterGroup) {
+        log.info("LOG INICIO X = findParametersByGroupPersistence parameterGroup={}", parameterGroup);
+        List<ParameterEntity> result = repository.findByParameterGroupAndActiveTrueOrderBySortOrderAsc(parameterGroup);
+        log.info("LOG FIN X = findParametersByGroupPersistence totalElements={}", result.size());
         return result;
     }
 
