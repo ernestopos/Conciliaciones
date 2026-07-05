@@ -9,6 +9,8 @@ public record KeycloakProperties(
         String clientId,
         String clientSecret,
         String grantType,
+        String adminClientId,
+        String adminClientSecret,
         int connectTimeoutMs,
         int readTimeoutMs
 ) {

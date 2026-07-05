@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.*;
         private final ListReconciliationCasesUseCase listReconciliationCasesUseCase;
         private final UpdateReconciliationCaseUseCase updateReconciliationCaseUseCase;
         private final DeleteReconciliationCaseUseCase deleteReconciliationCaseUseCase;
-    private final ReprocessReconciliationCaseUseCase reprocessReconciliationCaseUseCase;
+        private final ReprocessReconciliationCaseUseCase reprocessReconciliationCaseUseCase;
 
         @PostMapping
         @ResponseStatus(HttpStatus.CREATED)

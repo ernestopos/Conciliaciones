@@ -15,7 +15,7 @@ public class CommissionStatementEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="source_file_id",nullable=false)
+    @Column(name="source_file_id")
     private Long sourceFileId;
 
     @Column(name="raw_import_record_id")

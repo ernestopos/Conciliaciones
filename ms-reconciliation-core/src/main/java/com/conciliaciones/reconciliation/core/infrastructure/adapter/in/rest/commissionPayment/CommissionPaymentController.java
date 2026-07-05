@@ -1,11 +1,17 @@
 package com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.commissionPayment;
 
+import com.conciliaciones.reconciliation.core.application.port.in.commissionPayment.CreateManualCommissionPaymentUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.commissionPayment.ListCommissionPaymentsUseCase;
 import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.commissionPayment.CommissionPaymentResponse;
+import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.commissionPayment.CreateManualCommissionPaymentRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.support.AuthenticatedUserResolver;
 import com.conciliaciones.reconciliation.core.application.port.in.commissionPayment.GetCommissionPaymentByIdUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.commissionPayment.RecalculateCommissionPaymentUseCase;
 import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.commissionPayment.RecalculateCommissionPaymentRequest;
@@ -22,6 +28,23 @@ public class CommissionPaymentController {
     private final ListCommissionPaymentsUseCase listCommissionPaymentsUseCase;
     private final GetCommissionPaymentByIdUseCase getCommissionPaymentByIdUseCase;
     private final RecalculateCommissionPaymentUseCase recalculateCommissionPaymentUseCase;
+    private final CreateManualCommissionPaymentUseCase createManualCommissionPaymentUseCase;
+
+
+    @PostMapping("/manual")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CommissionPaymentResponse createManual(
+            @Valid @RequestBody CreateManualCommissionPaymentRequest request,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        log.info("LOG INICIO X = createManualCommissionPaymentController policyId={}", request.policyId());
+        CommissionPaymentResponse response = createManualCommissionPaymentUseCase.createManual(
+                request,
+                AuthenticatedUserResolver.resolveUsername(jwt)
+        );
+        log.info("LOG FIN X = createManualCommissionPaymentController id={}", response.id());
+        return response;
+    }
 
     @GetMapping
     public List<CommissionPaymentResponse> list(

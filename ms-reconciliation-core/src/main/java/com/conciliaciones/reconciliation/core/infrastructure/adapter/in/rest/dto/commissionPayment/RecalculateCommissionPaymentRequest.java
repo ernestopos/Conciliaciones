@@ -17,6 +17,8 @@ public record RecalculateCommissionPaymentRequest(
 
         @NotNull(message = "Commission es obligatorio")
         @DecimalMin(value = "0.01", message = "Commission debe ser mayor a cero")
-        BigDecimal commissionRatePct
+        BigDecimal commissionRatePct,
+
+        Boolean includedForPayment
 ) {
 }

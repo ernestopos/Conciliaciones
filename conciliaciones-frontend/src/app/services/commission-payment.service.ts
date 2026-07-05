@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { normalizeCollectionResponse } from '../core/services/api-response.utils';
-import { CommissionPayment, CommissionPaymentFilters, RecalculateCommissionPaymentRequest } from '../models/commission-payment.model';
+import { CommissionPayment, CommissionPaymentFilters, CreateManualCommissionPaymentRequest, RecalculateCommissionPaymentRequest } from '../models/commission-payment.model';
 
 @Injectable({ providedIn: 'root' })
 export class CommissionPaymentService {
@@ -32,5 +32,9 @@ export class CommissionPaymentService {
 
   recalculate(id: number, request: RecalculateCommissionPaymentRequest): Observable<CommissionPayment> {
     return this.http.put<CommissionPayment>(`${this.resourceUrl}/${id}/recalculate`, request);
+  }
+
+  createManual(request: CreateManualCommissionPaymentRequest): Observable<CommissionPayment> {
+    return this.http.post<CommissionPayment>(`${this.resourceUrl}/manual`, request);
   }
 }

@@ -1,13 +1,23 @@
 package com.conciliaciones.reconciliation.core.infrastructure.adapter.out.persistence.commissionPayment;
 
+import com.conciliaciones.persistence.repository.AgencyRepository;
 import com.conciliaciones.persistence.repository.CommissionPaymentDetailRepository;
+import com.conciliaciones.persistence.repository.CommissionStatementItemRepository;
+import com.conciliaciones.persistence.repository.CommissionStatementRepository;
+import com.conciliaciones.persistence.repository.PolicyRepository;
+import com.conciliaciones.persistence.repository.ProducerRepository;
 import com.conciliaciones.persistence.repository.projection.CommissionPaymentDetailView;
 import com.conciliaciones.reconciliation.core.application.port.out.commissionPayment.CommissionPaymentPersistencePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
+import com.conciliaciones.domain.entity.AgencyEntity;
 import com.conciliaciones.domain.entity.CommissionPaymentDetailEntity;
+import com.conciliaciones.domain.entity.CommissionStatementEntity;
+import com.conciliaciones.domain.entity.CommissionStatementItemEntity;
+import com.conciliaciones.domain.entity.PolicyEntity;
+import com.conciliaciones.domain.entity.ProducerEntity;
 import java.util.Optional;
 import java.util.List;
 
@@ -17,6 +27,11 @@ import java.util.List;
 public class CommissionPaymentPersistenceAdapter implements CommissionPaymentPersistencePort {
 
     private final CommissionPaymentDetailRepository repository;
+    private final CommissionStatementRepository commissionStatementRepository;
+    private final CommissionStatementItemRepository commissionStatementItemRepository;
+    private final PolicyRepository policyRepository;
+    private final ProducerRepository producerRepository;
+    private final AgencyRepository agencyRepository;
 
     @Override
     public List<CommissionPaymentDetailView> findCommissionPayments(
@@ -62,4 +77,40 @@ public class CommissionPaymentPersistenceAdapter implements CommissionPaymentPer
         log.info("LOG FIN X = saveCommissionPaymentPersistence id={}", saved.getId());
         return saved;
     }
+    @Override
+    public CommissionStatementEntity saveStatement(CommissionStatementEntity entity) {
+        log.info("LOG INICIO X = saveManualCommissionStatementPersistence policyId={}", entity.getPolicyId());
+        CommissionStatementEntity saved = commissionStatementRepository.save(entity);
+        log.info("LOG FIN X = saveManualCommissionStatementPersistence id={}", saved.getId());
+        return saved;
+    }
+
+    @Override
+    public CommissionStatementItemEntity saveItem(CommissionStatementItemEntity entity) {
+        log.info("LOG INICIO X = saveManualCommissionStatementItemPersistence statementId={}", entity.getCommissionStatementId());
+        CommissionStatementItemEntity saved = commissionStatementItemRepository.save(entity);
+        log.info("LOG FIN X = saveManualCommissionStatementItemPersistence id={}", saved.getId());
+        return saved;
+    }
+
+    @Override
+    public Optional<PolicyEntity> findPolicyById(Long id) {
+        return policyRepository.findById(id);
+    }
+
+    @Override
+    public Optional<ProducerEntity> findProducerById(Long id) {
+        return producerRepository.findById(id);
+    }
+
+    @Override
+    public Optional<AgencyEntity> findAgencyById(Long id) {
+        return agencyRepository.findById(id);
+    }
+
+    @Override
+    public boolean existsPaymentForPolicy(Long policyId) {
+        return repository.existsByPolicyId_Id(policyId);
+    }
+
 }

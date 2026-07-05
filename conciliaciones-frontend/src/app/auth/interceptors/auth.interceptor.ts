@@ -11,22 +11,31 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   const isProtectedBackendRequest =
     req.url.startsWith(environment.api.core) ||
-    req.url.startsWith(environment.api.fileManagement);
+    req.url.startsWith(environment.api.auth) ||
+    req.url.startsWith(environment.api.fileManagement) ||
+    req.url.startsWith(environment.api.reporting);
 
-  const authReq = token && isProtectedBackendRequest
-    ? req.clone({
-        setHeaders: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-    : req;
+  const authReq =
+    token && isProtectedBackendRequest
+      ? req.clone({
+          setHeaders: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+      : req;
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (isProtectedBackendRequest && (error.status === 401 || error.status === 403)) {
+      if (
+        isProtectedBackendRequest &&
+        (error.status === 401 || error.status === 403)
+      ) {
         clearAuthSession();
+
         router.navigate(['/auth/login'], {
-          queryParams: { sessionExpired: 'true' }
+          queryParams: {
+            sessionExpired: 'true'
+          }
         });
       }
 

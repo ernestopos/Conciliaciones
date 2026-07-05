@@ -4,6 +4,7 @@
 import com.conciliaciones.reconciliation.core.application.port.in.parameter.CreateParameterUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.parameter.DeleteParameterUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.parameter.GetParameterByIdUseCase;
+import com.conciliaciones.reconciliation.core.application.port.in.parameter.ListParametersByGroupUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.parameter.ListParametersUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.parameter.UpdateParameterUseCase;
 import com.conciliaciones.reconciliation.core.application.port.out.parameter.ParameterPersistencePort;
@@ -12,6 +13,7 @@ import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto
 import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.parameter.UpdateParameterRequest;
 import com.conciliaciones.reconciliation.core.infrastructure.exception.ResourceNotFoundException;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,7 +23,7 @@ import org.springframework.stereotype.Service;
     @Service
     @Slf4j
     @RequiredArgsConstructor
-    public class ParameterService implements CreateParameterUseCase, GetParameterByIdUseCase, ListParametersUseCase, UpdateParameterUseCase, DeleteParameterUseCase {
+    public class ParameterService implements CreateParameterUseCase, GetParameterByIdUseCase, ListParametersUseCase, ListParametersByGroupUseCase, UpdateParameterUseCase, DeleteParameterUseCase {
 
         private final ParameterPersistencePort persistencePort;
 
@@ -60,6 +62,18 @@ import org.springframework.stereotype.Service;
             log.info("LOG INICIO X = listParameters page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
             Page<ParameterResponse> result = persistencePort.findAll(pageable).map(this::toResponse);
             log.info("LOG FIN X = listParameters totalElements={}", result.getTotalElements());
+            return result;
+        }
+
+        @Override
+        public List<ParameterResponse> listByGroup(String parameterGroup) {
+            log.info("LOG INICIO X = listParametersByGroup parameterGroup={}", parameterGroup);
+            List<ParameterResponse> result = persistencePort
+                    .findByParameterGroupAndActiveTrueOrderBySortOrderAsc(parameterGroup)
+                    .stream()
+                    .map(this::toResponse)
+                    .toList();
+            log.info("LOG FIN X = listParametersByGroup totalElements={}", result.size());
             return result;
         }
 

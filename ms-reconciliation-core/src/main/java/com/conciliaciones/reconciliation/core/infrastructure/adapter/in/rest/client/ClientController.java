@@ -20,6 +20,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 
     @RestController
     @RequestMapping("/api/v1/clients")
@@ -53,7 +55,9 @@ import org.springframework.web.bind.annotation.*;
         }
 
         @GetMapping
-        public Page<ClientResponse> list(Pageable pageable) {
+        public Page<ClientResponse> list(
+                @PageableDefault(size = 1000, sort = "id", direction = Sort.Direction.ASC) Pageable pageable
+        ) {
             log.info("LOG INICIO X = listClientsController page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
             Page<ClientResponse> response = listClientsUseCase.list(pageable);
             log.info("LOG FIN X = listClientsController totalElements={}", response.getTotalElements());

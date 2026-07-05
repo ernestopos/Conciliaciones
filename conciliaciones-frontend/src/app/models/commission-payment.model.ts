@@ -29,4 +29,20 @@ export interface RecalculateCommissionPaymentRequest {
   netAmount: number;
   rate: number;
   commissionRatePct: number;
+  includedForPayment: boolean;
+}
+
+
+export interface CreateManualCommissionPaymentRequest {
+  policyId: number;
+  producerId: number;
+  agencyId?: number | null;
+  statementDate: string;
+  paidDate: string;
+  invoiceNumber?: string | null;
+  concept?: string | null;
+  netAmount: number;
+  rate: number;
+  commissionRatePct: number;
+  includedForPayment: boolean;
 }

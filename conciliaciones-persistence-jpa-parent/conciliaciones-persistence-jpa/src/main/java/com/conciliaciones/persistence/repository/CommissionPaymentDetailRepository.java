@@ -63,4 +63,6 @@ public interface CommissionPaymentDetailRepository extends JpaRepository<Commiss
         WHERE cpd.id = :id
         """)
     Optional<CommissionPaymentDetailEntity> findByIdWithCalculationData(@Param("id") Long id);
+
+    boolean existsByPolicyId_Id(Long policyId);
 }

@@ -33,7 +33,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 @ConditionalOnProperty(prefix = "app.aws.s3", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class S3StorageAdapter implements ObjectStoragePort {
 
-    private static final List<String> ALLOWED_ORIGINS = List.of("http://localhost:4200");
+    private static final List<String> ALLOWED_ORIGINS = List.of("*");
 
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
@@ -61,6 +61,7 @@ public class S3StorageAdapter implements ObjectStoragePort {
             log.info("Bucket ya existe: {}", resolvedBucket);
             applyCors(resolvedBucket);
         } catch (Exception ex) {
+            log.error("Error real creando bucket {}", resolvedBucket, ex);
             throw new ObjectStorageException("Error creando bucket " + resolvedBucket, ex);
         }
     }

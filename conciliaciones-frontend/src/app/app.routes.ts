@@ -12,6 +12,12 @@ import { CrudRouteConfig } from './core/models/crud.models';
 import { UploadSourcesFilePageComponent } from './features/upload-files/upload-sources-file/upload-sources-file-page.component';
 import { PoliciesPageComponent } from './features/maestros/policies/policies-page.component';
 import { CommissionPaymentsPageComponent } from './features/pagos/liquidaciones/commission-payments-page.component';
+import { CommissionReconciliationsPageComponent } from './features/conciliacion/commission-reconciliations/commission-reconciliations-page.component';
+import { ManualCommissionPageComponent } from './features/conciliacion/manual-commission/manual-commission-page.component';
+import { ReportsPageComponent } from './features/reportes/reports-page.component';
+import { SecurityUsersPageComponent } from './features/security/users/security-users-page.component';
+import { SecurityRoleMenuPermissionsPageComponent } from './features/security/role-menu-permissions/security-role-menu-permissions-page.component';
+import { SecurityUserRolesPageComponent } from './features/security/user-roles/security-user-roles-page.component';
 
 const agencyCrudConfig: CrudRouteConfig = {
   resourceKey: 'agencies',
@@ -108,6 +114,28 @@ const parameterCrudConfig: CrudRouteConfig = {
   ]
 };
 
+
+const securityRoleCrudConfig: CrudRouteConfig = {
+  resourceKey: 'security-roles',
+  title: 'Roles',
+  subtitle: 'Administración de roles de seguridad.',
+  createLabel: 'Nuevo rol',
+  columns: ['id', 'code', 'name', 'description', 'active'],
+  headers: {
+    id: 'ID',
+    code: 'Código',
+    name: 'Nombre',
+    description: 'Descripción',
+    active: 'Activo'
+  },
+  fields: [
+    { key: 'code', label: 'Código', required: true },
+    { key: 'name', label: 'Nombre', required: true },
+    { key: 'description', label: 'Descripción', type: 'textarea' },
+    { key: 'active', label: 'Activo', type: 'checkbox' }
+  ]
+};
+
 const reconciliationCaseCrudConfig: CrudRouteConfig = {
   resourceKey: 'reconciliation-cases',
   title: 'Casos de conciliación',
@@ -146,7 +174,10 @@ export const routes: Routes = [
       { path: 'conciliacion/source-files', component: SourceFilesPageComponent },
       { path: 'conciliacion/processing-executions', component: ProcessingExecutionsPageComponent },
       { path: 'conciliacion/processing-executions/:id', component: ProcessingExecutionDetailPageComponent },
-      { path: 'seguridad/usuarios', component: DomainPlaceholderComponent, data: { title: 'Seguridad' } },
+      { path: 'seguridad/roles', component: CrudEntityPageComponent, data: { crudConfig: securityRoleCrudConfig } },
+      { path: 'seguridad/usuarios', component: SecurityUsersPageComponent },
+      { path: 'seguridad/funciones-roles', component: SecurityRoleMenuPermissionsPageComponent },
+      { path: 'seguridad/usuarios-roles', component: SecurityUserRolesPageComponent },
       { path: 'maestros/agencias', component: CrudEntityPageComponent, data: { crudConfig: agencyCrudConfig } },
       { path: 'maestros/carriers', component: CrudEntityPageComponent, data: { crudConfig: carrierCrudConfig } },
       { path: 'maestros/polizas', component: PoliciesPageComponent },
@@ -155,10 +186,11 @@ export const routes: Routes = [
       { path: 'maestros/parametros', component: CrudEntityPageComponent, data: { crudConfig: parameterCrudConfig } },
       { path: 'maestros/estados-poliza', component: DomainPlaceholderComponent, data: { title: 'Estados de Póliza' } },
       { path: 'maestros/reglas-comision', component: DomainPlaceholderComponent, data: { title: 'Reglas de Comisión' } },
-      { path: 'conciliacion/casos', component: CrudEntityPageComponent, data: { crudConfig: reconciliationCaseCrudConfig } },
+      { path: 'conciliacion/casos', component: CommissionReconciliationsPageComponent },
+      { path: 'conciliacion/manual', component: ManualCommissionPageComponent },
       { path: 'pagos/liquidaciones', component: CommissionPaymentsPageComponent },
       { path: 'auditoria/registros', component: DomainPlaceholderComponent, data: { title: 'Auditoría' } },
-      { path: 'reportes', component: DomainPlaceholderComponent, data: { title: 'Reportes' } },
+      { path: 'reportes', component: ReportsPageComponent },
       { path: 'upload-files/upload-sources-file',  component: UploadSourcesFilePageComponent },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' }
     ]
