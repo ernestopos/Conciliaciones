@@ -157,19 +157,21 @@ export class BackendAuthProvider extends AuthProviderPort {
     const responseUser = response?.user ?? response?.data?.user ?? response?.result?.user;
     if (responseUser) {
       return {
-        id: Number(responseUser.id ?? payload?.sub ?? 0),
-        name: responseUser.name ?? responseUser.fullName ?? responseUser.username ?? payload?.name ?? username,
-        email: responseUser.email ?? payload?.email ?? '',
-        roles: this.extractRoles(responseUser.roles ?? payload?.realm_access?.roles ?? payload?.roles),
-        permissions: responseUser.permissions ?? []
+        id: Number(payload?.sub ?? 0),
+        username: payload?.preferred_username ?? username,
+        name: payload?.name ?? payload?.preferred_username ?? username,
+        email: payload?.email ?? '',
+        roles: this.extractRoles(response?.roles ?? payload?.realm_access?.roles ?? payload?.roles),
+        permissions: []
       };
     }
 
     return {
       id: Number(payload?.sub ?? 0),
+      username: payload?.preferred_username ?? username,
       name: payload?.name ?? payload?.preferred_username ?? username,
       email: payload?.email ?? '',
-      roles: this.extractRoles(payload?.realm_access?.roles ?? payload?.roles),
+      roles: this.extractRoles(response?.roles ?? payload?.realm_access?.roles ?? payload?.roles),
       permissions: []
     };
   }

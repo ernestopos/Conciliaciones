@@ -4,6 +4,7 @@ export type CrudResourceKey =
   | 'clients'
   | 'producers'
   | 'parameters'
+  | 'security-roles'
   | 'reconciliation-cases';
 
 export type CrudFieldType = 'text' | 'textarea' | 'number' | 'date' | 'datetime-local' | 'checkbox' | 'select' | 'email';
