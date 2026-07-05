@@ -117,3 +117,157 @@ INSERT INTO parameter (
 )
 VALUES
 (126, 'COMISIONES', 'REPORTE DE COMISIONES', 'PaymentForEachProducer', 'REPORTING_SERVICES', TRUE, 1, 'seed');
+
+-- =========================================================
+-- MENUS / SUBMENUS - SEGURIDAD + APP
+-- =========================================================
+
+-- =========================================================
+-- MENUS
+-- =========================================================
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+VALUES
+(127, 'SEGURIDAD', 'Menú de Seguridad', 'Seguridad', 'MENU_HEAD', TRUE, 1, 'seed'),
+(128, 'CATALOGO_MAESTRO', 'Menú de Catálogos & Maestros', 'Catálogos / Maestros', 'MENU_HEAD', TRUE, 2, 'seed'),
+(129, 'CONCILIACION', 'Menú de Conciliación', 'Conciliación', 'MENU_HEAD', TRUE, 3, 'seed'),
+(130, 'UPLOAD_FILES', 'Menú de Upload Files', 'Upload Files', 'MENU_HEAD', TRUE, 4, 'seed'),
+(131, 'PAGOS_LIQUIDACION', 'Menú de Pagos & Liquidaciones', 'Pagos / Liquidaciones', 'MENU_HEAD', TRUE, 5, 'seed'),
+(132, 'REPORTES', 'Menú de Reportes', 'Reportes', 'MENU_HEAD', TRUE, 6, 'seed');
+
+-- =========================================================
+-- SUB MENUS
+-- =========================================================
+INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+VALUES
+(133, 'ROL', 'Sub menú de Roles', 'Roles', 'SEGURIDAD', TRUE, 1, 'seed'),
+(134, 'CONFIG_USUARIOS', 'Sub menú de Configuración de Usuarios', 'Configuración de usuarios', 'SEGURIDAD', TRUE, 2, 'seed'),
+(135, 'CONFIG_FUNCIONES_ROLES', 'Sub menú de Configuración Funciones a Roles', 'Configuración Funciones a Roles', 'SEGURIDAD', TRUE, 3, 'seed'),
+(136, 'ASOCIAR_ROL_USUARIO', 'Sub menú de Asociar Rol a Usuario', 'Asociar Rol a Usuario', 'SEGURIDAD', TRUE, 4, 'seed'),
+
+(137, 'CLIENTES', 'Sub menú de Clientes', 'Clientes', 'CATALOGO_MAESTRO', TRUE, 1, 'seed'),
+(138, 'PRODUCTORES', 'Sub menú de Productores', 'Productores', 'CATALOGO_MAESTRO', TRUE, 2, 'seed'),
+(139, 'AGENCIAS', 'Sub menú de Agencias', 'Agencias', 'CATALOGO_MAESTRO', TRUE, 3, 'seed'),
+(140, 'CARRIERS', 'Sub menú de Carriers', 'Carriers', 'CATALOGO_MAESTRO', TRUE, 4, 'seed'),
+(141, 'POLIZAS', 'Sub menú de Pólizas', 'Pólizas', 'CATALOGO_MAESTRO', TRUE, 5, 'seed'),
+
+(142, 'ARCHIVO_FUENTE', 'Sub menú de Archivos Fuentes', 'Archivos fuente', 'CONCILIACION', TRUE, 1, 'seed'),
+(143, 'EJECUCIONES', 'Sub menú de Ejecuciones', 'Ejecuciones', 'CONCILIACION', TRUE, 2, 'seed'),
+(144, 'CASOS_CONCILIACION', 'Sub menú de Casos Conciliación', 'Casos de conciliación', 'CONCILIACION', TRUE, 3, 'seed'),
+(145, 'CONCILIACION_MANUAL', 'Sub menú de Conciliación Manual', 'Conciliación manual', 'CONCILIACION', TRUE, 4, 'seed'),
+
+(146, 'UPLOAD_SOURCE_FILE', 'Sub menú de Upload Source Files', 'Upload sources file', 'UPLOAD_FILES', TRUE, 1, 'seed'),
+
+(147, 'LIQUIDACIONES', 'Sub menú de Liquidaciones', 'Liquidaciones', 'PAGOS_LIQUIDACION', TRUE, 1, 'seed'),
+
+(148, 'REPORTES_GENERALES', 'Sub menú de Reportes', 'Reportes', 'REPORTES', TRUE, 1, 'seed');
+
+-- =========================================================
+-- SECURITY MENUS
+-- =========================================================
+INSERT INTO security_menu (parameter_id, code, label, icon, sort_order, active, created_by)
+VALUES
+(127, 'SEGURIDAD', 'Seguridad', 'security', 1, TRUE, 'seed'),
+(128, 'CATALOGO_MAESTRO', 'Catálogos / Maestros', 'folder_open', 2, TRUE, 'seed'),
+(129, 'CONCILIACION', 'Conciliación', 'account_balance', 3, TRUE, 'seed'),
+(130, 'UPLOAD_FILES', 'Upload Files', 'upload_file', 4, TRUE, 'seed'),
+(131, 'PAGOS_LIQUIDACION', 'Pagos / Liquidaciones', 'payments', 5, TRUE, 'seed'),
+(132, 'REPORTES', 'Reportes', 'assessment', 6, TRUE, 'seed');
+
+-- =========================================================
+-- SECURITY SUB MENUS - SEGURIDAD
+-- =========================================================
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 133, 'ROL', 'Roles', '/seguridad/roles', 'admin_panel_settings', 1, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'SEGURIDAD';
+
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 134, 'CONFIG_USUARIOS', 'Configuración de usuarios', '/seguridad/usuarios', 'manage_accounts', 2, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'SEGURIDAD';
+
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 135, 'CONFIG_FUNCIONES_ROLES', 'Configuración Funciones a Roles', '/seguridad/funciones-roles', 'rule_settings', 3, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'SEGURIDAD';
+
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 136, 'ASOCIAR_ROL_USUARIO', 'Asociar Rol a Usuario', '/seguridad/usuarios-roles', 'person_add', 4, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'SEGURIDAD';
+
+-- =========================================================
+-- SECURITY SUB MENUS - CATÁLOGOS / MAESTROS
+-- =========================================================
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 137, 'CLIENTES', 'Clientes', '/maestros/clientes', 'business', 1, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'CATALOGO_MAESTRO';
+
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 138, 'PRODUCTORES', 'Productores', '/maestros/productores', 'groups', 2, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'CATALOGO_MAESTRO';
+
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 139, 'AGENCIAS', 'Agencias', '/maestros/agencias', 'apartment', 3, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'CATALOGO_MAESTRO';
+
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 140, 'CARRIERS', 'Carriers', '/maestros/carriers', 'domain', 4, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'CATALOGO_MAESTRO';
+
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 141, 'POLIZAS', 'Pólizas', '/maestros/polizas', 'description', 5, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'CATALOGO_MAESTRO';
+
+-- =========================================================
+-- SECURITY SUB MENUS - CONCILIACIÓN
+-- =========================================================
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 142, 'ARCHIVO_FUENTE', 'Archivos fuente', '/conciliacion/source-files', 'upload_file', 1, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'CONCILIACION';
+
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 143, 'EJECUCIONES', 'Ejecuciones', '/conciliacion/processing-executions', 'sync', 2, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'CONCILIACION';
+
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 144, 'CASOS_CONCILIACION', 'Casos de conciliación', '/conciliacion/casos', 'fact_check', 3, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'CONCILIACION';
+
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 145, 'CONCILIACION_MANUAL', 'Conciliación manual', '/conciliacion/manual', 'edit_note', 4, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'CONCILIACION';
+
+-- =========================================================
+-- SECURITY SUB MENUS - UPLOAD FILES
+-- =========================================================
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 146, 'UPLOAD_SOURCE_FILE', 'Upload sources file', '/upload-files/upload-sources-file', 'description', 1, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'UPLOAD_FILES';
+
+-- =========================================================
+-- SECURITY SUB MENUS - PAGOS / LIQUIDACIONES
+-- =========================================================
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 147, 'LIQUIDACIONES', 'Liquidaciones', '/pagos/liquidaciones', 'payments', 1, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'PAGOS_LIQUIDACION';
+
+-- =========================================================
+-- SECURITY SUB MENUS - REPORTES
+-- =========================================================
+INSERT INTO security_sub_menu (menu_id, parameter_id, code, label, route, icon, sort_order, active, created_by)
+SELECT m.id, 148, 'REPORTES_GENERALES', 'Reportes', '/reportes', 'assessment', 1, TRUE, 'seed'
+FROM security_menu m WHERE m.code = 'REPORTES';
+
+
+-- =========================================================
+-- ROL ADMIN
+-- =========================================================
+INSERT INTO security_role (code,name,description,active,created_by)
+VALUES ('ADMIN','Administrador','Rol administrador con acceso total al sistema',TRUE,'seed');
+
+-- =========================================================
+-- PERMISOS ADMIN - TODOS LOS MENÚS Y SUBMENÚS
+-- =========================================================
+INSERT INTO security_role_menu_permission (role_id,menu_id,sub_menu_id,active,created_by) 
+SELECT r.id,sm.id AS menu_id, ssm.id AS sub_menu_id,TRUE,'seed'
+FROM security_role r 
+INNER JOIN security_sub_menu ssm ON ssm.active = TRUE
+INNER JOIN security_menu sm ON sm.id = ssm.menu_id AND sm.active = TRUE
+WHERE r.code = 'ADMIN';

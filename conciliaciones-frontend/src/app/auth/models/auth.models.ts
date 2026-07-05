@@ -10,6 +10,7 @@ export interface Role {
 
 export interface AuthUser {
   id: number;
+  username?: string;
   name: string;
   email: string;
   roles: Role[];

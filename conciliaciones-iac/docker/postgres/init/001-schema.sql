@@ -655,7 +655,129 @@ CREATE TABLE IF NOT EXISTS reconciliation.scheduled_task (
 );
 
 -- =========================================================
--- 16. INDICES
+-- 15. SECURITY_MENU
+-- =========================================================
+CREATE TABLE security_menu (
+    id BIGSERIAL PRIMARY KEY,
+    parameter_id BIGINT NOT NULL,
+    code VARCHAR(100) NOT NULL,
+    label VARCHAR(150) NOT NULL,
+    icon VARCHAR(100),
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_at TIMESTAMP,
+    updated_by VARCHAR(100),
+    CONSTRAINT fk_security_menu_parameter FOREIGN KEY (parameter_id) REFERENCES parameter(id),
+    CONSTRAINT uk_security_menu_parameter UNIQUE (parameter_id),
+    CONSTRAINT uk_security_menu_code UNIQUE (code)
+);
+
+-- =========================================================
+-- 16. SECURITY_SUB_MENU
+-- =========================================================
+CREATE TABLE security_sub_menu (
+    id BIGSERIAL PRIMARY KEY,
+    menu_id BIGINT NOT NULL,
+    parameter_id BIGINT NOT NULL,
+    code VARCHAR(100) NOT NULL,
+    label VARCHAR(150) NOT NULL,
+    route VARCHAR(200) NOT NULL,
+    icon VARCHAR(100),
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_at TIMESTAMP,
+    updated_by VARCHAR(100),
+    CONSTRAINT fk_security_sub_menu_menu FOREIGN KEY (menu_id) REFERENCES security_menu(id),
+    CONSTRAINT fk_security_sub_menu_parameter FOREIGN KEY (parameter_id) REFERENCES parameter(id),
+    CONSTRAINT uk_security_sub_menu_parameter UNIQUE (parameter_id),
+    CONSTRAINT uk_security_sub_menu_code UNIQUE (code),
+    CONSTRAINT uk_security_sub_menu_route UNIQUE (route)
+);
+
+-- =========================================================
+-- 17. SECURITY_USER
+-- =========================================================
+CREATE TABLE security_user (
+    id BIGSERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    full_name VARCHAR(200) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_at TIMESTAMP,
+    updated_by VARCHAR(100),
+    CONSTRAINT uk_security_user_username UNIQUE (username),
+    CONSTRAINT uk_security_user_email UNIQUE (email)
+);
+
+-- =========================================================
+-- 18. SECURITY_ROLE
+-- =========================================================
+CREATE TABLE security_role (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(100) NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    description VARCHAR(500),
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_at TIMESTAMP,
+    updated_by VARCHAR(100),
+    CONSTRAINT uk_security_role_code UNIQUE (code)
+);
+
+-- =========================================================
+-- 19. SECURITY_USER
+-- =========================================================
+CREATE TABLE security_role_menu_permission (
+    id BIGSERIAL PRIMARY KEY,
+    role_id BIGINT NOT NULL,
+    menu_id BIGINT NOT NULL,
+    sub_menu_id BIGINT,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_at TIMESTAMP,
+    updated_by VARCHAR(100),
+    CONSTRAINT fk_security_role_menu_permission_role FOREIGN KEY (role_id) REFERENCES security_role(id),
+    CONSTRAINT fk_security_role_menu_permission_menu FOREIGN KEY (menu_id) REFERENCES security_menu(id),
+    CONSTRAINT fk_security_role_menu_permission_sub_menu FOREIGN KEY (sub_menu_id) REFERENCES security_sub_menu(id),
+	CONSTRAINT uk_security_role_menu_permission UNIQUE (role_id, menu_id, sub_menu_id)
+);
+
+-- =========================================================
+-- 20. SECURITY_USER_ROLE
+-- =========================================================
+CREATE TABLE reconciliation.security_user_role (
+    id bigserial NOT NULL,
+    user_id int8 NOT NULL,
+    role_id int8 NOT NULL,
+    active bool DEFAULT true NOT NULL,
+    created_at timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_by varchar(100) NULL,
+    updated_at timestamp NULL,
+    updated_by varchar(100) NULL,
+
+    CONSTRAINT security_user_role_pkey PRIMARY KEY (id),
+
+    CONSTRAINT uk_security_user_role_user UNIQUE (user_id),
+
+    CONSTRAINT fk_security_user_role_user
+        FOREIGN KEY (user_id)
+        REFERENCES reconciliation.security_user(id),
+
+    CONSTRAINT fk_security_user_role_role
+        FOREIGN KEY (role_id)
+        REFERENCES reconciliation.security_role(id)
+);
+
+-- =========================================================
+-- 18. INDICES
 -- =========================================================
 
 CREATE INDEX IF NOT EXISTS idx_agency_carrier_id

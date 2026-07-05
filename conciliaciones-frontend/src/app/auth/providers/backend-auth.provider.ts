@@ -46,12 +46,12 @@ export class BackendAuthProvider implements AuthProviderPort {
 
         const user: AuthUser = {
           id: 0,
-          name: payload?.name ?? credentials.username,
+          username: payload?.preferred_username ?? credentials.username,
+          name: payload?.name ?? payload?.preferred_username ?? credentials.username,
           email: payload?.email ?? '',
           roles: this.mapRoles(roleCodes),
           permissions: this.mapPermissions(roleCodes)
-        };
-
+        };        
         return { response, user };
       }),
       tap(({ response, user }) => {

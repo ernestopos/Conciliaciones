@@ -15,6 +15,9 @@ import { CommissionPaymentsPageComponent } from './features/pagos/liquidaciones/
 import { CommissionReconciliationsPageComponent } from './features/conciliacion/commission-reconciliations/commission-reconciliations-page.component';
 import { ManualCommissionPageComponent } from './features/conciliacion/manual-commission/manual-commission-page.component';
 import { ReportsPageComponent } from './features/reportes/reports-page.component';
+import { SecurityUsersPageComponent } from './features/security/users/security-users-page.component';
+import { SecurityRoleMenuPermissionsPageComponent } from './features/security/role-menu-permissions/security-role-menu-permissions-page.component';
+import { SecurityUserRolesPageComponent } from './features/security/user-roles/security-user-roles-page.component';
 
 const agencyCrudConfig: CrudRouteConfig = {
   resourceKey: 'agencies',
@@ -111,6 +114,28 @@ const parameterCrudConfig: CrudRouteConfig = {
   ]
 };
 
+
+const securityRoleCrudConfig: CrudRouteConfig = {
+  resourceKey: 'security-roles',
+  title: 'Roles',
+  subtitle: 'Administración de roles de seguridad.',
+  createLabel: 'Nuevo rol',
+  columns: ['id', 'code', 'name', 'description', 'active'],
+  headers: {
+    id: 'ID',
+    code: 'Código',
+    name: 'Nombre',
+    description: 'Descripción',
+    active: 'Activo'
+  },
+  fields: [
+    { key: 'code', label: 'Código', required: true },
+    { key: 'name', label: 'Nombre', required: true },
+    { key: 'description', label: 'Descripción', type: 'textarea' },
+    { key: 'active', label: 'Activo', type: 'checkbox' }
+  ]
+};
+
 const reconciliationCaseCrudConfig: CrudRouteConfig = {
   resourceKey: 'reconciliation-cases',
   title: 'Casos de conciliación',
@@ -149,7 +174,10 @@ export const routes: Routes = [
       { path: 'conciliacion/source-files', component: SourceFilesPageComponent },
       { path: 'conciliacion/processing-executions', component: ProcessingExecutionsPageComponent },
       { path: 'conciliacion/processing-executions/:id', component: ProcessingExecutionDetailPageComponent },
-      { path: 'seguridad/usuarios', component: DomainPlaceholderComponent, data: { title: 'Seguridad' } },
+      { path: 'seguridad/roles', component: CrudEntityPageComponent, data: { crudConfig: securityRoleCrudConfig } },
+      { path: 'seguridad/usuarios', component: SecurityUsersPageComponent },
+      { path: 'seguridad/funciones-roles', component: SecurityRoleMenuPermissionsPageComponent },
+      { path: 'seguridad/usuarios-roles', component: SecurityUserRolesPageComponent },
       { path: 'maestros/agencias', component: CrudEntityPageComponent, data: { crudConfig: agencyCrudConfig } },
       { path: 'maestros/carriers', component: CrudEntityPageComponent, data: { crudConfig: carrierCrudConfig } },
       { path: 'maestros/polizas', component: PoliciesPageComponent },

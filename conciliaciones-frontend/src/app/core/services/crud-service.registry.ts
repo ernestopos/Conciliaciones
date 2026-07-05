@@ -6,6 +6,7 @@ import { CarrierService } from '../../services/carrier.service';
 import { ClientService } from '../../services/client.service';
 import { ProducerService } from '../../services/producer.service';
 import { ParameterService } from '../../services/parameter.service';
+import { SecurityRoleService } from '../../services/security-role.service';
 import { ReconciliationCaseService } from '../../services/reconciliation-case.service';
 
 export interface CrudDataService<T extends { id?: number | string }> {
@@ -25,6 +26,7 @@ export class CrudServiceRegistry {
     private readonly clientService: ClientService,
     private readonly producerService: ProducerService,
     private readonly parameterService: ParameterService,
+    private readonly securityRoleService: SecurityRoleService,
     private readonly reconciliationCaseService: ReconciliationCaseService
   ) {}
 
@@ -40,6 +42,8 @@ export class CrudServiceRegistry {
         return this.producerService;
       case 'parameters':
         return this.parameterService;
+      case 'security-roles':
+        return this.securityRoleService;
       case 'reconciliation-cases':
         return this.reconciliationCaseService;
       default:
