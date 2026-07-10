@@ -1,6 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatDatepicker, MatDatepickerModule } from '@angular/material/datepicker';
+import { MAT_DATE_FORMATS, MatNativeDateModule } from '@angular/material/core';
+import { MatInputModule } from '@angular/material/input';
 import { DomSanitizer } from '@angular/platform-browser';
 import { catchError, finalize, of, timeout } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,6 +21,19 @@ import { ParameterService } from '../../services/parameter.service';
 import { GeneratedReportPreview } from './models/report.model';
 import { ReportService } from './services/report.service';
 
+const REPORTS_WITH_YEAR = ['PaymentMonthlyForCarrier'];
+const YEAR_DATE_FORMATS = {
+  parse: {
+    dateInput: 'yyyy'
+  },
+  display: {
+    dateInput: { year: 'numeric' },
+    monthYearLabel: { year: 'numeric' },
+    dateA11yLabel: { year: 'numeric' },
+    monthYearA11yLabel: { year: 'numeric' }
+  }
+};
+
 @Component({
   selector: 'app-reports-page',
   standalone: true,
@@ -27,6 +43,9 @@ import { ReportService } from './services/report.service';
     MatButtonModule,
     MatCardModule,
     MatFormFieldModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
+    MatInputModule,
     MatIconModule,
     MatProgressBarModule,
     MatSelectModule,
@@ -54,6 +73,26 @@ import { ReportService } from './services/report.service';
               </mat-select>
               <mat-hint>Grupo de parámetros: REPORTING_SERVICES</mat-hint>
             </mat-form-field>
+
+            @if (requiresYear) {
+              <mat-form-field appearance="outline" class="year-select">
+                <mat-label>Año</mat-label>
+                <input
+                  matInput
+                  readonly
+                  [matDatepicker]="yearPicker"
+                  formControlName="year"
+                  placeholder="Seleccione el año"
+                />
+                <mat-datepicker-toggle matIconSuffix [for]="yearPicker"></mat-datepicker-toggle>
+                <mat-datepicker
+                  #yearPicker
+                  startView="multi-year"
+                  (yearSelected)="onYearSelected($event, yearPicker)"
+                ></mat-datepicker>
+                <mat-hint>Seleccione solo el año del reporte</mat-hint>
+              </mat-form-field>
+            }
 
             <button
               mat-raised-button
@@ -108,26 +147,32 @@ import { ReportService } from './services/report.service';
       }
     </div>
   `,
+  providers: [
+    { provide: MAT_DATE_FORMATS, useValue: YEAR_DATE_FORMATS }
+  ],
   styles: [
     `.page-shell{display:block}`,
     `.report-card{margin-bottom:16px;border-radius:14px}`,
     `.report-form{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}`,
     `.report-select{min-width:320px;flex:1}`,
+    `.year-select{width:180px}`,
     `.report-form button{height:56px}`,
     `.viewer-card{border-radius:14px;overflow:hidden}`,
     `.viewer-card mat-card-content{padding:0}`,
     `.pdf-viewer{display:block;width:100%;height:calc(100vh - 265px);min-height:560px;border:0;background:#f5f5f5}`,
-    `@media(max-width:720px){.report-select{min-width:100%}.report-form button{width:100%}.pdf-viewer{height:620px}}`
+    `@media(max-width:720px){.report-select{min-width:100%}.year-select{width:100%}.report-form button{width:100%}.pdf-viewer{height:620px}}`
   ]
 })
 export class ReportsPageComponent implements OnInit, OnDestroy {
   readonly form = this.fb.group({
-    reportCode: ['', Validators.required]
+    reportCode: ['', Validators.required],
+    year: [null as Date | null]
   });
 
   reports: Parameter[] = [];
   loadingReports = true;
   generating = false;
+  requiresYear = false;
   preview?: GeneratedReportPreview;
 
   constructor(
@@ -140,6 +185,7 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.listenReportChanges();
     this.loadReports();
   }
 
@@ -151,14 +197,21 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
     return report.id ?? report.value ?? index;
   }
 
+  onYearSelected(date: Date, datepicker: MatDatepicker<Date>): void {
+    this.form.controls.year.setValue(date);
+    datepicker.close();
+  }
+
   executeReport(): void {
     const reportCode = this.form.controls.reportCode.value;
     if (!reportCode) {
       return;
     }
 
+    const parameters = this.buildReportParameters(reportCode);
+
     this.generating = true;
-    this.reportService.generatePdf(reportCode).subscribe({
+    this.reportService.generatePdf(reportCode, parameters).subscribe({
       next: ({ blob, fileName }) => {
         this.clearPreview();
         const url = URL.createObjectURL(blob);
@@ -186,6 +239,34 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
     link.href = this.preview.url;
     link.download = this.preview.fileName;
     link.click();
+  }
+
+
+  private listenReportChanges(): void {
+    this.form.controls.reportCode.valueChanges.subscribe((reportCode) => {
+      this.requiresYear = REPORTS_WITH_YEAR.includes(reportCode ?? '');
+      const yearControl = this.form.controls.year;
+
+      if (this.requiresYear) {
+        yearControl.setValidators([Validators.required]);
+      } else {
+        yearControl.clearValidators();
+        yearControl.setValue(null);
+      }
+
+      yearControl.updateValueAndValidity();
+    });
+  }
+
+  private buildReportParameters(reportCode: string): Record<string, unknown> {
+    const parameters: Record<string, unknown> = { limit: 100 };
+
+    if (REPORTS_WITH_YEAR.includes(reportCode)) {
+      const selectedYear = this.form.controls.year.value;
+      parameters['REPORT_YEAR'] = selectedYear?.getFullYear();
+    }
+
+    return parameters;
   }
 
   private loadReports(): void {

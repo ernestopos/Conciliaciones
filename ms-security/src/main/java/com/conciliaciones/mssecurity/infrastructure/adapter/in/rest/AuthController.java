@@ -5,6 +5,7 @@ import com.conciliaciones.mssecurity.domain.model.LoginResult;
 import com.conciliaciones.mssecurity.domain.model.UserValidationResult;
 import com.conciliaciones.mssecurity.infrastructure.adapter.in.rest.dto.LoginRequest;
 import com.conciliaciones.mssecurity.infrastructure.adapter.in.rest.dto.LoginResponse;
+import com.conciliaciones.mssecurity.infrastructure.adapter.in.rest.dto.RefreshTokenRequest;
 import com.conciliaciones.mssecurity.infrastructure.adapter.in.rest.dto.ValidateResponse;
 import com.conciliaciones.mssecurity.infrastructure.exception.AuthenticationException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -53,6 +54,19 @@ public class AuthController {
         );
 
         log.info("Autenticación exitosa de usuario");
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/refresh")
+    @Operation(
+            summary = "Renovar token de acceso",
+            description = "Recibe un refresh token y retorna un nuevo access token"
+    )
+    public ResponseEntity<LoginResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        log.info("Inicio renovación de token");
+        LoginResult result = authUseCase.refresh(request.refreshToken());
+        LoginResponse response = new LoginResponse(result.accessToken(),result.refreshToken(),result.tokenType(),result.expiresIn(),result.roles());
+        log.info("Renovación de token exitosa");
         return ResponseEntity.ok(response);
     }
 

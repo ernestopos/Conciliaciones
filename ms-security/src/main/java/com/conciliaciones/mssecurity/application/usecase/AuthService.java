@@ -67,6 +67,21 @@ public class AuthService implements AuthUseCase {
         return roles;
     }
 
+    @Override
+    public LoginResult refresh(String refreshToken) {
+        log.info("LOG INICIO X = refresh");
+        try {
+            LoginResult result = keycloakPort.refresh(refreshToken);
+            auditUseCase.register("NA","REFRESH_TOKEN",AuditActionResult.SUCCESS,"Renovación de token exitosa",null,null,"ACTIVE");
+            log.info("LOG FIN X = refresh");
+            return result;
+        } catch (RuntimeException ex) {
+            auditUseCase.register("NA", "REFRESH_TOKEN",AuditActionResult.FAILED,"Error renovando token",null,null,"ERROR");
+            log.error("Error durante la renovación del token", ex);
+            throw ex;
+        }
+    }
+
     private String extractBearerToken(String authorizationHeader) {
         log.info("LOG INICIO X = extractBearerToken");
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {

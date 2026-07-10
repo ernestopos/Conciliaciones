@@ -13,4 +13,6 @@ public interface KeycloakPort {
     UserValidationResult validateToken(String accessToken);
 
     List<KeycloakUserResponse> findUsers();
+
+    LoginResult refresh(String refreshToken);
 }

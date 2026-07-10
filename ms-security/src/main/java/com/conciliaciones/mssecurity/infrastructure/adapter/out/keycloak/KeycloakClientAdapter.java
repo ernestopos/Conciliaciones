@@ -306,6 +306,84 @@ public class KeycloakClientAdapter implements KeycloakPort {
                 .toList();
     }
 
+    @Override
+    @Retry(name = "keycloakClient")
+    @CircuitBreaker(name = "keycloakClient")
+    public LoginResult refresh(String refreshToken) {
+
+        log.info("LOG INICIO X = refresh");
+
+        try {
+            MultiValueMap<String, String> payload = new LinkedMultiValueMap<>();
+            payload.add("grant_type", "refresh_token");
+            payload.add("client_id", keycloakProperties.clientId());
+            payload.add("refresh_token", refreshToken);
+            if (shouldSendClientSecret()) {
+                payload.add("client_secret",keycloakProperties.clientSecret());
+            }
+
+            TokenResponse response = keycloakRestClient.post()
+                    .uri("/realms/{realm}/protocol/openid-connect/token",keycloakProperties.realm())
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .body(payload)
+                    .retrieve()
+                    .body(TokenResponse.class);
+
+            if (response == null|| response.accessToken() == null|| response.accessToken().isBlank()) {
+                throw new AuthenticationException("Keycloak no retornó un nuevo access token");
+            }
+
+            String newRefreshToken = response.refreshToken();
+
+            if (newRefreshToken == null || newRefreshToken.isBlank()) {
+                newRefreshToken = refreshToken;
+            }
+
+            List<String> roles = extractRolesFromJwt(response.accessToken());
+            log.info("LOG FIN X = refresh");
+            return new LoginResult(response.accessToken(),newRefreshToken,response.tokenType(),response.expiresIn(),roles);
+        } catch (
+                HttpClientErrorException.BadRequest
+                | HttpClientErrorException.Unauthorized ex
+        ) {
+
+            log.warn(
+                    "Refresh token inválido o expirado. status={}, response={}",
+                    ex.getStatusCode(),
+                    ex.getResponseBodyAsString()
+            );
+
+            throw new AuthenticationException(
+                    "La sesión expiró. Inicie sesión nuevamente"
+            );
+
+        } catch (HttpClientErrorException ex) {
+
+            log.error(
+                    "Error HTTP renovando token. status={}, response={}",
+                    ex.getStatusCode(),
+                    ex.getResponseBodyAsString(),
+                    ex
+            );
+
+            throw new AuthenticationException(
+                    "No fue posible renovar la sesión"
+            );
+
+        } catch (AuthenticationException ex) {
+            throw ex;
+
+        } catch (Exception ex) {
+
+            log.error("Error inesperado renovando token", ex);
+
+            throw new AuthenticationException(
+                    "No fue posible renovar la sesión"
+            );
+        }
+    }
+
     private String obtainAdminToken() {
 
         MultiValueMap<String, String> payload =
