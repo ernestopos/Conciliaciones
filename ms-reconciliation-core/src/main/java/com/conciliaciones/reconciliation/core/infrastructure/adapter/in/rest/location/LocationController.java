@@ -12,7 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/locations")
+@RequestMapping("/api/core/v1/locations")
 @RequiredArgsConstructor
 @Tag(name = "Locations", description = "Consulta de países, estados y ciudades")
 public class LocationController {

@@ -148,3 +148,8 @@ body.theme-dark .login-shell input::placeholder {
   color: #64748b !important;
 }
 
+
+.carrier-portals-dialog-panel .mat-mdc-dialog-surface {
+  overflow: hidden;
+  border-radius: 22px !important;
+}

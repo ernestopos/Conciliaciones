@@ -21,7 +21,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
     @RestController
-    @RequestMapping("/api/v1/carriers")
+    @RequestMapping("/api/core/v1/carriers")
     @RequiredArgsConstructor
     @Slf4j
     @Tag(name = "Carrier", description = "Operaciones CRUD para Carrier")

@@ -47,3 +47,7 @@ security:
     client-secret:
     admin-username: ${KEYCLOAK_ADMIN_USERNAME:admin}
     admin-password: ${KEYCLOAK_ADMIN_PASSWORD:admin123}
+  secure-browser:
+    idp-initiated-url: ${SECURE_BROWSER_IDP_INITIATED_URL:https://nexcoverin.com/realms/conciliaciones/protocol/saml/clients/trust-connection}
+    portal-url: ${SECURE_BROWSER_PORTAL_URL:https://b8da6a7c-d4e9-4bf0-9b02-078c64f75323.workspaces-web.com}
+    deep-links-enabled: ${SECURE_BROWSER_DEEP_LINKS_ENABLED:false}

@@ -2,6 +2,7 @@ package com.conciliaciones.reconciliation.core.application.usecase.policy;
 
 import com.conciliaciones.domain.entity.ParameterEntity;
 import com.conciliaciones.domain.entity.PolicyEntity;
+import com.conciliaciones.persistence.repository.projection.DonutCharValTolProjection;
 import com.conciliaciones.reconciliation.core.application.port.in.policy.CreatePolicyUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.policy.DeletePolicyUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.policy.GetPolicyByIdUseCase;
@@ -16,6 +17,8 @@ import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto
 import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.policy.UpdatePolicyRequest;
 import com.conciliaciones.reconciliation.core.infrastructure.exception.ResourceNotFoundException;
 import java.time.LocalDateTime;
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -89,6 +92,14 @@ public class PolicyService implements CreatePolicyUseCase, GetPolicyByIdUseCase,
         Page<PolicyResponse> result = policyPersistencePort.findAll(pageable).map(this::toResponse);
 
         log.info("LOG FIN X = listPolicies totalElements={}", result.getTotalElements());
+        return result;
+    }
+
+    @Override
+    public List<DonutCharValTolProjection> charPolicyCreate() {
+        log.info("LOG INICIO X = charPolicyCreate page={} size={}");
+        List<DonutCharValTolProjection> result = policyPersistencePort.charPolicyCreate();
+        log.info("LOG FIN X = charPolicyCreate totalElements={}", result.size());
         return result;
     }
 

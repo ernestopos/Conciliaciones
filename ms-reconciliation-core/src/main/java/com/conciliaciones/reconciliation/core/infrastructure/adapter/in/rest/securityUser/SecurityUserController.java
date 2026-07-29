@@ -14,7 +14,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/security/users")
+@RequestMapping("/api/core/v1/security/users")
 @RequiredArgsConstructor
 public class SecurityUserController {
 
