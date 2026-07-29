@@ -1,0 +1,158 @@
+<section class="access-page">
+  <div class="hero-panel">
+    <div class="hero-copy">
+      <div class="eyebrow">
+        <span class="pulse-dot"></span>
+        NEXCOVERIN SECURE ACCESS
+      </div>
+
+      <h1>Secure U.S. Carrier Network</h1>
+      <p class="hero-text">
+        Nexcoverin is preparing a protected connection to a United States network
+        so you can continue to the authorized insurance carrier portal.
+      </p>
+
+      <div class="route-line" aria-label="Connection route">
+        <div class="route-node">
+          <mat-icon>public</mat-icon>
+          <span>Your location</span>
+        </div>
+        <div class="route-track" [class.active]="connecting || connected">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="route-node destination" [class.connected]="connected">
+          <mat-icon>cloud_done</mat-icon>
+          <span>United States</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="security-orbit" aria-hidden="true">
+      <div class="orbit orbit-one"></div>
+      <div class="orbit orbit-two"></div>
+      <div class="shield-core">
+        <mat-icon>{{ connected ? 'verified_user' : 'shield' }}</mat-icon>
+      </div>
+      <span class="orbit-icon icon-lock"><mat-icon>lock</mat-icon></span>
+      <span class="orbit-icon icon-policy"><mat-icon>policy</mat-icon></span>
+      <span class="orbit-icon icon-language"><mat-icon>language</mat-icon></span>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <mat-card class="connection-card">
+      <div class="card-heading">
+        <div>
+          <span class="section-kicker">CONNECTION CONTROL</span>
+          <h2>Trust Connection</h2>
+        </div>
+        <span class="status-badge" [class.connecting]="connecting" [class.connected]="connected">
+          <mat-icon>{{ connected ? 'check_circle' : connecting ? 'sync' : 'radio_button_checked' }}</mat-icon>
+          {{ connected ? 'READY' : connecting ? 'CONNECTING' : 'STANDBY' }}
+        </span>
+      </div>
+
+      <div class="connection-message">
+        <mat-icon>{{ connected ? 'task_alt' : 'vpn_lock' }}</mat-icon>
+        <div>
+          <strong>{{ statusMessage }}</strong>
+          <span>
+            {{ connected
+              ? 'The secure route has been validated. The external carrier portal may now be opened when its destination URL is configured.'
+              : 'Your session remains inside Nexcoverin until the secure connection is confirmed.' }}
+          </span>
+        </div>
+      </div>
+
+      <mat-progress-bar
+        *ngIf="connecting || connected"
+        mode="determinate"
+        [value]="progress">
+      </mat-progress-bar>
+
+      <div *ngIf="errorMessage" class="connection-error" role="alert">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <div class="security-controls">
+        <div>
+          <mat-icon>enhanced_encryption</mat-icon>
+          <span><strong>Encrypted route</strong>Protected network transit</span>
+        </div>
+        <div>
+          <mat-icon>manage_accounts</mat-icon>
+          <span><strong>Authorized use</strong>Assigned credentials only</span>
+        </div>
+        <div>
+          <mat-icon>visibility</mat-icon>
+          <span><strong>Activity awareness</strong>External browsing rules apply</span>
+        </div>
+      </div>
+
+      <mat-checkbox [(ngModel)]="acknowledged" [disabled]="connecting">
+        I understand that I am entering an external U.S.-based network and will use
+        only authorized accounts, data and functions.
+      </mat-checkbox>
+
+      <div class="actions">
+        <button
+          mat-flat-button
+          class="connect-button"
+          type="button"
+          [disabled]="!acknowledged || connecting || connected"
+          (click)="startConnection()">
+          <mat-icon>{{ connecting ? 'sync' : 'vpn_lock' }}</mat-icon>
+          {{ connecting ? 'Establishing connection...' : connected ? 'Connection ready' : 'Start secure connection' }}
+        </button>
+
+        <button
+          *ngIf="connected"
+          mat-button
+          type="button"
+          class="reset-button"
+          (click)="resetConnection()">
+          Reset
+        </button>
+      </div>
+    </mat-card>
+
+    <aside class="notice-column">
+      <mat-card class="notice-card warning-card">
+        <div class="notice-icon"><mat-icon>gpp_maybe</mat-icon></div>
+        <div>
+          <span class="section-kicker">IMPORTANT NOTICE</span>
+          <h3>Proceed with care</h3>
+          <p>
+            Once redirected, you will be navigating an external carrier website.
+            Nexcoverin does not control that site's content, availability, privacy
+            practices or authentication policies.
+          </p>
+        </div>
+      </mat-card>
+
+      <mat-card class="notice-card legal-card">
+        <div class="notice-icon"><mat-icon>balance</mat-icon></div>
+        <div>
+          <span class="section-kicker">AUTHORIZED ACCESS</span>
+          <h3>United States legal reminder</h3>
+          <p>
+            Access only systems, accounts and information for which you have explicit
+            authorization. Unauthorized computer access may be subject to the U.S.
+            Computer Fraud and Abuse Act, 18 U.S.C. § 1030.
+          </p>
+          <p class="legal-note">
+            Follow the carrier's terms of use, privacy notices and security policies.
+            This notice is informational and is not legal advice.
+          </p>
+        </div>
+      </mat-card>
+
+      <div class="trust-strip">
+        <span><mat-icon>lock</mat-icon>TLS protected</span>
+        <span><mat-icon>shield</mat-icon>Controlled access</span>
+        <span><mat-icon>travel_explore</mat-icon>U.S. route</span>
+      </div>
+    </aside>
+  </div>
+</section>

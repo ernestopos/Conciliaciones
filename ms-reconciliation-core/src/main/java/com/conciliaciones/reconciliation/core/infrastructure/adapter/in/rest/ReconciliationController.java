@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/reconciliations")
+@RequestMapping("/api/core/v1/reconciliations")
 @RequiredArgsConstructor
 @Tag(name = "Reconciliations", description = "Operaciones del core de conciliación")
 public class ReconciliationController {

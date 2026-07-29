@@ -1,6 +1,7 @@
 -- =========================================================
 -- PROYECTO: RECONCILIACION / LIQUIDACION DE COMISIONES
 -- MOTOR: PostgreSQL
+-- VERSION RECTIFICADA / IDÉMPOTENTE
 -- VERSION AJUSTADA CON TABLA PARAMETER
 -- CONVENCION:
 --   name  = codigo tecnico
@@ -8,14 +9,13 @@
 -- =========================================================
 
 CREATE SCHEMA IF NOT EXISTS reconciliation;
-SET search_path TO reconciliation;
-
+-- No se usa search_path: todos los objetos están calificados explícitamente.
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- =========================================================
 -- 1. TABLA GENERAL DE PARAMETROS
 -- =========================================================
-CREATE TABLE IF NOT EXISTS parameter (
+CREATE TABLE IF NOT EXISTS reconciliation.parameter (
     id                  BIGINT PRIMARY KEY,
     name                VARCHAR(150) NOT NULL,
     description         VARCHAR(500),
@@ -32,19 +32,19 @@ CREATE TABLE IF NOT EXISTS parameter (
 );
 
 CREATE INDEX IF NOT EXISTS idx_parameter_group
-    ON parameter(parameter_group);
+    ON reconciliation.parameter(parameter_group);
 
 CREATE INDEX IF NOT EXISTS idx_parameter_group_active
-    ON parameter(parameter_group, active);
+    ON reconciliation.parameter(parameter_group, active);
 
 CREATE INDEX IF NOT EXISTS idx_parameter_group_name
-    ON parameter(parameter_group, name);
+    ON reconciliation.parameter(parameter_group, name);
 
 -- =========================================================
 -- 2. TABLAS MAESTRAS
 -- =========================================================
 
-CREATE TABLE IF NOT EXISTS carrier (
+CREATE TABLE IF NOT EXISTS reconciliation.carrier (
     id                  BIGSERIAL PRIMARY KEY,
     code                VARCHAR(50) NOT NULL,
     name                VARCHAR(150) NOT NULL,
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS carrier (
     CONSTRAINT uq_carrier_name UNIQUE (name)
 );
 
-CREATE TABLE IF NOT EXISTS agency (
+CREATE TABLE IF NOT EXISTS reconciliation.agency (
     id                  BIGSERIAL PRIMARY KEY,
     carrier_id          BIGINT,
     external_agency_id  VARCHAR(100),
@@ -69,11 +69,11 @@ CREATE TABLE IF NOT EXISTS agency (
     updated_at          TIMESTAMP,
     updated_by          VARCHAR(100),
     CONSTRAINT fk_agency_carrier
-        FOREIGN KEY (carrier_id) REFERENCES carrier(id),
+        FOREIGN KEY (carrier_id) REFERENCES reconciliation.carrier(id),
     CONSTRAINT uq_agency_carrier_name UNIQUE (carrier_id, name)
 );
 
-CREATE TABLE IF NOT EXISTS producer (
+CREATE TABLE IF NOT EXISTS reconciliation.producer (
     id                   BIGSERIAL PRIMARY KEY,
     agency_id            BIGINT,
     external_producer_id VARCHAR(100),
@@ -90,11 +90,11 @@ CREATE TABLE IF NOT EXISTS producer (
     updated_at           TIMESTAMP,
     updated_by           VARCHAR(100),
     CONSTRAINT fk_producer_agency
-        FOREIGN KEY (agency_id) REFERENCES agency(id),
+        FOREIGN KEY (agency_id) REFERENCES reconciliation.agency(id),
     CONSTRAINT uq_producer_external_id UNIQUE (external_producer_id)
 );
 
-CREATE TABLE IF NOT EXISTS client (
+CREATE TABLE IF NOT EXISTS reconciliation.client (
     id                  BIGSERIAL PRIMARY KEY,
     external_client_id  VARCHAR(100),
     first_name          VARCHAR(100),
@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS client (
 -- 3. ARCHIVOS E INGESTA
 -- =========================================================
 
-CREATE TABLE IF NOT EXISTS source_file (
+CREATE TABLE IF NOT EXISTS reconciliation.source_file (
     id                   BIGSERIAL PRIMARY KEY,
     carrier_id           BIGINT NOT NULL,
     original_file_name   VARCHAR(255) NOT NULL,
@@ -138,12 +138,12 @@ CREATE TABLE IF NOT EXISTS source_file (
     updated_at           TIMESTAMP,
     updated_by           VARCHAR(100),
     CONSTRAINT fk_source_file_carrier
-        FOREIGN KEY (carrier_id) REFERENCES carrier(id),
+        FOREIGN KEY (carrier_id) REFERENCES reconciliation.carrier(id),
     CONSTRAINT fk_source_file_processing_status
-        FOREIGN KEY (processing_status_id) REFERENCES parameter(id)
+        FOREIGN KEY (processing_status_id) REFERENCES reconciliation.parameter(id)
 );
 
-CREATE TABLE IF NOT EXISTS source_file_sheet (
+CREATE TABLE IF NOT EXISTS reconciliation.source_file_sheet (
     id                  BIGSERIAL PRIMARY KEY,
     source_file_id      BIGINT NOT NULL,
     sheet_name          VARCHAR(255) NOT NULL,
@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS source_file_sheet (
     created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by          VARCHAR(100),
     CONSTRAINT fk_source_file_sheet_file
-        FOREIGN KEY (source_file_id) REFERENCES source_file(id) ON DELETE CASCADE,
+        FOREIGN KEY (source_file_id) REFERENCES reconciliation.source_file(id) ON DELETE CASCADE,
     CONSTRAINT uq_source_file_sheet UNIQUE (source_file_id, sheet_name)
 );
 
@@ -160,7 +160,7 @@ CREATE TABLE IF NOT EXISTS source_file_sheet (
 -- 4. RAW DATA
 -- =========================================================
 
-CREATE TABLE IF NOT EXISTS raw_import_record (
+CREATE TABLE IF NOT EXISTS reconciliation.raw_import_record (
     id                   BIGSERIAL PRIMARY KEY,
     source_file_id       BIGINT NOT NULL,
     source_file_sheet_id BIGINT,
@@ -172,11 +172,11 @@ CREATE TABLE IF NOT EXISTS raw_import_record (
     created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by           VARCHAR(100),
     CONSTRAINT fk_raw_import_record_file
-        FOREIGN KEY (source_file_id) REFERENCES source_file(id) ON DELETE CASCADE,
+        FOREIGN KEY (source_file_id) REFERENCES reconciliation.source_file(id) ON DELETE CASCADE,
     CONSTRAINT fk_raw_import_record_sheet
-        FOREIGN KEY (source_file_sheet_id) REFERENCES source_file_sheet(id) ON DELETE CASCADE,
+        FOREIGN KEY (source_file_sheet_id) REFERENCES reconciliation.source_file_sheet(id) ON DELETE CASCADE,
     CONSTRAINT fk_raw_import_record_parse_status
-        FOREIGN KEY (parse_status_id) REFERENCES parameter(id),
+        FOREIGN KEY (parse_status_id) REFERENCES reconciliation.parameter(id),
     CONSTRAINT uq_raw_import_record UNIQUE (source_file_id, row_number)
 );
 
@@ -278,7 +278,7 @@ CREATE TABLE IF NOT EXISTS reconciliation.city (
 -- 5. POLIZAS Y MODELO CANONICO
 -- =========================================================
 
-CREATE TABLE IF NOT EXISTS policy (
+CREATE TABLE IF NOT EXISTS reconciliation.policy (
     id                  BIGSERIAL PRIMARY KEY,
     carrier_id          BIGINT NOT NULL,
     client_id           BIGINT,
@@ -298,17 +298,17 @@ CREATE TABLE IF NOT EXISTS policy (
     updated_at          TIMESTAMP,
     updated_by          VARCHAR(100),
     CONSTRAINT fk_policy_carrier
-        FOREIGN KEY (carrier_id) REFERENCES carrier(id),
+        FOREIGN KEY (carrier_id) REFERENCES reconciliation.carrier(id),
     CONSTRAINT fk_policy_client
-        FOREIGN KEY (client_id) REFERENCES client(id),
+        FOREIGN KEY (client_id) REFERENCES reconciliation.client(id),
     CONSTRAINT fk_policy_status
-        FOREIGN KEY (status_id) REFERENCES parameter(id),
+        FOREIGN KEY (status_id) REFERENCES reconciliation.parameter(id),
 	CONSTRAINT fk_policy_resident_state
-        FOREIGN KEY (resident_state) REFERENCES city(id),
+        FOREIGN KEY (resident_state) REFERENCES reconciliation.city(id),
     CONSTRAINT uq_policy_carrier_number UNIQUE (carrier_id, policy_number)
 );
 
-CREATE TABLE IF NOT EXISTS policy_plan (
+CREATE TABLE IF NOT EXISTS reconciliation.policy_plan (
     id                  BIGSERIAL PRIMARY KEY,
     policy_id           BIGINT NOT NULL,
     plan_name           VARCHAR(200),
@@ -321,10 +321,10 @@ CREATE TABLE IF NOT EXISTS policy_plan (
     updated_at          TIMESTAMP,
     updated_by          VARCHAR(100),
     CONSTRAINT fk_policy_plan_policy
-        FOREIGN KEY (policy_id) REFERENCES policy(id) ON DELETE CASCADE
+        FOREIGN KEY (policy_id) REFERENCES reconciliation.policy(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS policy_status_history (
+CREATE TABLE IF NOT EXISTS reconciliation.policy_status_history (
     id                  BIGSERIAL PRIMARY KEY,
     policy_id           BIGINT NOT NULL,
     source_file_id      BIGINT,
@@ -335,18 +335,18 @@ CREATE TABLE IF NOT EXISTS policy_status_history (
     created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by          VARCHAR(100),
     CONSTRAINT fk_policy_status_history_policy
-        FOREIGN KEY (policy_id) REFERENCES policy(id) ON DELETE CASCADE,
+        FOREIGN KEY (policy_id) REFERENCES reconciliation.policy(id) ON DELETE CASCADE,
     CONSTRAINT fk_policy_status_history_file
-        FOREIGN KEY (source_file_id) REFERENCES source_file(id),
+        FOREIGN KEY (source_file_id) REFERENCES reconciliation.source_file(id),
     CONSTRAINT fk_policy_status_history_status
-        FOREIGN KEY (status_id) REFERENCES parameter(id)
+        FOREIGN KEY (status_id) REFERENCES reconciliation.parameter(id)
 );
 
 -- =========================================================
 -- 6. ASIGNACION DE COMISIONES
 -- =========================================================
 
-CREATE TABLE IF NOT EXISTS commission_assignment (
+CREATE TABLE IF NOT EXISTS reconciliation.commission_assignment (
     id                  BIGSERIAL PRIMARY KEY,
     policy_id           BIGINT NOT NULL,
     producer_id         BIGINT NOT NULL,
@@ -359,9 +359,9 @@ CREATE TABLE IF NOT EXISTS commission_assignment (
     updated_at          TIMESTAMP,
     updated_by          VARCHAR(100),
     CONSTRAINT fk_commission_assignment_policy
-        FOREIGN KEY (policy_id) REFERENCES policy(id) ON DELETE CASCADE,
+        FOREIGN KEY (policy_id) REFERENCES reconciliation.policy(id) ON DELETE CASCADE,
     CONSTRAINT fk_commission_assignment_producer
-        FOREIGN KEY (producer_id) REFERENCES producer(id),    
+        FOREIGN KEY (producer_id) REFERENCES reconciliation.producer(id),    
     CONSTRAINT ck_commission_assignment_split
         CHECK (split_percentage IS NULL OR (split_percentage >= 0 AND split_percentage <= 100))
 );
@@ -370,7 +370,7 @@ CREATE TABLE IF NOT EXISTS commission_assignment (
 -- 7. REGISTROS DE COMISION / NORMALIZADOS
 -- =========================================================
 
-CREATE TABLE IF NOT EXISTS commission_statement (
+CREATE TABLE IF NOT EXISTS reconciliation.commission_statement (
     id                   BIGSERIAL PRIMARY KEY,
     source_file_id       BIGINT NOT NULL,
     raw_import_record_id BIGINT,
@@ -395,26 +395,26 @@ CREATE TABLE IF NOT EXISTS commission_statement (
     updated_at           TIMESTAMP,
     updated_by           VARCHAR(100),
     CONSTRAINT fk_commission_statement_source_file
-        FOREIGN KEY (source_file_id) REFERENCES source_file(id) ON DELETE CASCADE,
+        FOREIGN KEY (source_file_id) REFERENCES reconciliation.source_file(id) ON DELETE CASCADE,
     CONSTRAINT fk_commission_statement_raw_import
-        FOREIGN KEY (raw_import_record_id) REFERENCES raw_import_record(id) ON DELETE SET NULL,
+        FOREIGN KEY (raw_import_record_id) REFERENCES reconciliation.raw_import_record(id) ON DELETE SET NULL,
     CONSTRAINT fk_commission_statement_carrier
-        FOREIGN KEY (carrier_id) REFERENCES carrier(id),
+        FOREIGN KEY (carrier_id) REFERENCES reconciliation.carrier(id),
     CONSTRAINT fk_commission_statement_agency
-        FOREIGN KEY (agency_id) REFERENCES agency(id),
+        FOREIGN KEY (agency_id) REFERENCES reconciliation.agency(id),
     CONSTRAINT fk_commission_statement_producer
-        FOREIGN KEY (producer_id) REFERENCES producer(id),
+        FOREIGN KEY (producer_id) REFERENCES reconciliation.producer(id),
     CONSTRAINT fk_commission_statement_client
-        FOREIGN KEY (client_id) REFERENCES client(id),
+        FOREIGN KEY (client_id) REFERENCES reconciliation.client(id),
     CONSTRAINT fk_commission_statement_policy
-        FOREIGN KEY (policy_id) REFERENCES policy(id),
+        FOREIGN KEY (policy_id) REFERENCES reconciliation.policy(id),
     CONSTRAINT fk_commission_statement_raw_status
-        FOREIGN KEY (raw_status_id) REFERENCES parameter(id),
+        FOREIGN KEY (raw_status_id) REFERENCES reconciliation.parameter(id),
     CONSTRAINT fk_commission_statement_reason_code
-        FOREIGN KEY (reason_code_id) REFERENCES parameter(id)
+        FOREIGN KEY (reason_code_id) REFERENCES reconciliation.parameter(id)
 );
 
-CREATE TABLE IF NOT EXISTS commission_statement_item (
+CREATE TABLE IF NOT EXISTS reconciliation.commission_statement_item (
     id                      BIGSERIAL PRIMARY KEY,
     commission_statement_id BIGINT NOT NULL,
     gross_premium           NUMERIC(18,2),
@@ -436,14 +436,14 @@ CREATE TABLE IF NOT EXISTS commission_statement_item (
     updated_at              TIMESTAMP,
     updated_by              VARCHAR(100),
     CONSTRAINT fk_commission_statement_item_statement
-        FOREIGN KEY (commission_statement_id) REFERENCES commission_statement(id) ON DELETE CASCADE
+        FOREIGN KEY (commission_statement_id) REFERENCES reconciliation.commission_statement(id) ON DELETE CASCADE
 );
 
 -- =========================================================
 -- 8. REGLAS
 -- =========================================================
 
-CREATE TABLE IF NOT EXISTS commission_rule (
+CREATE TABLE IF NOT EXISTS reconciliation.commission_rule (
     id                  BIGSERIAL PRIMARY KEY,
     carrier_id          BIGINT,
     role_id             BIGINT,
@@ -462,18 +462,18 @@ CREATE TABLE IF NOT EXISTS commission_rule (
     updated_at          TIMESTAMP,
     updated_by          VARCHAR(100),
     CONSTRAINT fk_commission_rule_carrier
-        FOREIGN KEY (carrier_id) REFERENCES carrier(id),
+        FOREIGN KEY (carrier_id) REFERENCES reconciliation.carrier(id),
     CONSTRAINT fk_commission_rule_role
-        FOREIGN KEY (role_id) REFERENCES parameter(id),
+        FOREIGN KEY (role_id) REFERENCES reconciliation.parameter(id),
     CONSTRAINT fk_commission_rule_type
-        FOREIGN KEY (rule_type_id) REFERENCES parameter(id)
+        FOREIGN KEY (rule_type_id) REFERENCES reconciliation.parameter(id)
 );
 
 -- =========================================================
 -- 9. CASOS DE RECONCILIACION
 -- =========================================================
 
-CREATE TABLE IF NOT EXISTS reconciliation_case (
+CREATE TABLE IF NOT EXISTS reconciliation.reconciliation_case (
     id                           BIGSERIAL PRIMARY KEY,
     source_file_id               BIGINT NOT NULL,
     commission_statement_id      BIGINT,
@@ -495,30 +495,30 @@ CREATE TABLE IF NOT EXISTS reconciliation_case (
     updated_at                   TIMESTAMP,
     updated_by                   VARCHAR(100),
     CONSTRAINT fk_reconciliation_case_source_file
-        FOREIGN KEY (source_file_id) REFERENCES source_file(id),
+        FOREIGN KEY (source_file_id) REFERENCES reconciliation.source_file(id),
     CONSTRAINT fk_reconciliation_case_statement
-        FOREIGN KEY (commission_statement_id) REFERENCES commission_statement(id) ON DELETE SET NULL,
+        FOREIGN KEY (commission_statement_id) REFERENCES reconciliation.commission_statement(id) ON DELETE SET NULL,
     CONSTRAINT fk_reconciliation_case_statement_item
-        FOREIGN KEY (commission_statement_item_id) REFERENCES commission_statement_item(id) ON DELETE SET NULL,
+        FOREIGN KEY (commission_statement_item_id) REFERENCES reconciliation.commission_statement_item(id) ON DELETE SET NULL,
     CONSTRAINT fk_reconciliation_case_carrier
-        FOREIGN KEY (carrier_id) REFERENCES carrier(id),
+        FOREIGN KEY (carrier_id) REFERENCES reconciliation.carrier(id),
     CONSTRAINT fk_reconciliation_case_policy
-        FOREIGN KEY (policy_id) REFERENCES policy(id),
+        FOREIGN KEY (policy_id) REFERENCES reconciliation.policy(id),
     CONSTRAINT fk_reconciliation_case_producer
-        FOREIGN KEY (producer_id) REFERENCES producer(id),
+        FOREIGN KEY (producer_id) REFERENCES reconciliation.producer(id),
     CONSTRAINT fk_reconciliation_case_type
-        FOREIGN KEY (case_type_id) REFERENCES parameter(id),
+        FOREIGN KEY (case_type_id) REFERENCES reconciliation.parameter(id),
     CONSTRAINT fk_reconciliation_case_severity
-        FOREIGN KEY (severity_id) REFERENCES parameter(id),
+        FOREIGN KEY (severity_id) REFERENCES reconciliation.parameter(id),
     CONSTRAINT fk_reconciliation_case_status
-        FOREIGN KEY (status_id) REFERENCES parameter(id)
+        FOREIGN KEY (status_id) REFERENCES reconciliation.parameter(id)
 );
 
 -- =========================================================
 -- 10. LIQUIDACION / PAGOS
 -- =========================================================
 
-CREATE TABLE IF NOT EXISTS commission_payment (
+CREATE TABLE IF NOT EXISTS reconciliation.commission_payment (
     id                  BIGSERIAL PRIMARY KEY,
     producer_id         BIGINT NOT NULL,
     period_year         INTEGER NOT NULL,
@@ -538,14 +538,14 @@ CREATE TABLE IF NOT EXISTS commission_payment (
     updated_at          TIMESTAMP,
     updated_by          VARCHAR(100),
     CONSTRAINT fk_commission_payment_producer
-        FOREIGN KEY (producer_id) REFERENCES producer(id),
+        FOREIGN KEY (producer_id) REFERENCES reconciliation.producer(id),
     CONSTRAINT fk_commission_payment_status
-        FOREIGN KEY (status_id) REFERENCES parameter(id),
+        FOREIGN KEY (status_id) REFERENCES reconciliation.parameter(id),
     CONSTRAINT uq_commission_payment_period UNIQUE (producer_id, period_year, period_month),
     CONSTRAINT ck_commission_payment_month CHECK (period_month BETWEEN 1 AND 12)
 );
 
-CREATE TABLE IF NOT EXISTS commission_payment_detail (
+CREATE TABLE IF NOT EXISTS reconciliation.commission_payment_detail (
     id                           BIGSERIAL PRIMARY KEY,
     policy_id                    BIGINT,
     commission_statement_item_id BIGINT,
@@ -559,18 +559,18 @@ CREATE TABLE IF NOT EXISTS commission_payment_detail (
     updated_at                   TIMESTAMP,
     updated_by                   VARCHAR(100),   
     CONSTRAINT fk_commission_payment_detail_policy
-        FOREIGN KEY (policy_id) REFERENCES policy(id),
+        FOREIGN KEY (policy_id) REFERENCES reconciliation.policy(id),
     CONSTRAINT fk_commission_payment_detail_statement_item
-        FOREIGN KEY (commission_statement_item_id) REFERENCES commission_statement_item(id),
+        FOREIGN KEY (commission_statement_item_id) REFERENCES reconciliation.commission_statement_item(id),
     CONSTRAINT fk_commission_payment_detail_case
-        FOREIGN KEY (reconciliation_case_id) REFERENCES reconciliation_case(id)
+        FOREIGN KEY (reconciliation_case_id) REFERENCES reconciliation.reconciliation_case(id)
 );
 
 -- =========================================================
 -- 11. AUDITORIA
 -- =========================================================
 
-CREATE TABLE IF NOT EXISTS audit_log (
+CREATE TABLE IF NOT EXISTS reconciliation.audit_log (
     id                  BIGSERIAL PRIMARY KEY,
     entity_name         VARCHAR(150) NOT NULL,
     entity_id           VARCHAR(100) NOT NULL,
@@ -581,7 +581,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
     new_values          JSONB,
     details             TEXT,
     CONSTRAINT fk_audit_log_action
-        FOREIGN KEY (action_id) REFERENCES parameter(id)
+        FOREIGN KEY (action_id) REFERENCES reconciliation.parameter(id)
 );
 
 -- =========================================================
@@ -606,7 +606,7 @@ CREATE TABLE IF NOT EXISTS reconciliation.source_file_traceability (
 -- 13. execution_plan_task
 -- =========================================================
 
-CREATE TABLE IF NOT EXISTS execution_plan_task (
+CREATE TABLE IF NOT EXISTS reconciliation.execution_plan_task (
     id BIGSERIAL PRIMARY KEY,
     id_source_file BIGINT NOT NULL,
     id_status BIGINT NOT NULL,
@@ -657,7 +657,7 @@ CREATE TABLE IF NOT EXISTS reconciliation.scheduled_task (
 -- =========================================================
 -- 15. SECURITY_MENU
 -- =========================================================
-CREATE TABLE security_menu (
+CREATE TABLE IF NOT EXISTS reconciliation.security_menu (
     id BIGSERIAL PRIMARY KEY,
     parameter_id BIGINT NOT NULL,
     code VARCHAR(100) NOT NULL,
@@ -669,7 +669,7 @@ CREATE TABLE security_menu (
     created_by VARCHAR(100),
     updated_at TIMESTAMP,
     updated_by VARCHAR(100),
-    CONSTRAINT fk_security_menu_parameter FOREIGN KEY (parameter_id) REFERENCES parameter(id),
+    CONSTRAINT fk_security_menu_parameter FOREIGN KEY (parameter_id) REFERENCES reconciliation.parameter(id),
     CONSTRAINT uk_security_menu_parameter UNIQUE (parameter_id),
     CONSTRAINT uk_security_menu_code UNIQUE (code)
 );
@@ -677,7 +677,7 @@ CREATE TABLE security_menu (
 -- =========================================================
 -- 16. SECURITY_SUB_MENU
 -- =========================================================
-CREATE TABLE security_sub_menu (
+CREATE TABLE IF NOT EXISTS reconciliation.security_sub_menu (
     id BIGSERIAL PRIMARY KEY,
     menu_id BIGINT NOT NULL,
     parameter_id BIGINT NOT NULL,
@@ -691,8 +691,8 @@ CREATE TABLE security_sub_menu (
     created_by VARCHAR(100),
     updated_at TIMESTAMP,
     updated_by VARCHAR(100),
-    CONSTRAINT fk_security_sub_menu_menu FOREIGN KEY (menu_id) REFERENCES security_menu(id),
-    CONSTRAINT fk_security_sub_menu_parameter FOREIGN KEY (parameter_id) REFERENCES parameter(id),
+    CONSTRAINT fk_security_sub_menu_menu FOREIGN KEY (menu_id) REFERENCES reconciliation.security_menu(id),
+    CONSTRAINT fk_security_sub_menu_parameter FOREIGN KEY (parameter_id) REFERENCES reconciliation.parameter(id),
     CONSTRAINT uk_security_sub_menu_parameter UNIQUE (parameter_id),
     CONSTRAINT uk_security_sub_menu_code UNIQUE (code),
     CONSTRAINT uk_security_sub_menu_route UNIQUE (route)
@@ -701,7 +701,7 @@ CREATE TABLE security_sub_menu (
 -- =========================================================
 -- 17. SECURITY_USER
 -- =========================================================
-CREATE TABLE security_user (
+CREATE TABLE IF NOT EXISTS reconciliation.security_user (
     id BIGSERIAL PRIMARY KEY,
     username VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL,
@@ -718,7 +718,7 @@ CREATE TABLE security_user (
 -- =========================================================
 -- 18. SECURITY_ROLE
 -- =========================================================
-CREATE TABLE security_role (
+CREATE TABLE IF NOT EXISTS reconciliation.security_role (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(100) NOT NULL,
     name VARCHAR(150) NOT NULL,
@@ -734,7 +734,7 @@ CREATE TABLE security_role (
 -- =========================================================
 -- 19. SECURITY_USER
 -- =========================================================
-CREATE TABLE security_role_menu_permission (
+CREATE TABLE IF NOT EXISTS reconciliation.security_role_menu_permission (
     id BIGSERIAL PRIMARY KEY,
     role_id BIGINT NOT NULL,
     menu_id BIGINT NOT NULL,
@@ -744,16 +744,16 @@ CREATE TABLE security_role_menu_permission (
     created_by VARCHAR(100),
     updated_at TIMESTAMP,
     updated_by VARCHAR(100),
-    CONSTRAINT fk_security_role_menu_permission_role FOREIGN KEY (role_id) REFERENCES security_role(id),
-    CONSTRAINT fk_security_role_menu_permission_menu FOREIGN KEY (menu_id) REFERENCES security_menu(id),
-    CONSTRAINT fk_security_role_menu_permission_sub_menu FOREIGN KEY (sub_menu_id) REFERENCES security_sub_menu(id),
+    CONSTRAINT fk_security_role_menu_permission_role FOREIGN KEY (role_id) REFERENCES reconciliation.security_role(id),
+    CONSTRAINT fk_security_role_menu_permission_menu FOREIGN KEY (menu_id) REFERENCES reconciliation.security_menu(id),
+    CONSTRAINT fk_security_role_menu_permission_sub_menu FOREIGN KEY (sub_menu_id) REFERENCES reconciliation.security_sub_menu(id),
 	CONSTRAINT uk_security_role_menu_permission UNIQUE (role_id, menu_id, sub_menu_id)
 );
 
 -- =========================================================
 -- 20. SECURITY_USER_ROLE
 -- =========================================================
-CREATE TABLE reconciliation.security_user_role (
+CREATE TABLE IF NOT EXISTS reconciliation.security_user_role (
     id bigserial NOT NULL,
     user_id int8 NOT NULL,
     role_id int8 NOT NULL,
@@ -777,59 +777,113 @@ CREATE TABLE reconciliation.security_user_role (
 );
 
 -- =========================================================
+-- 21. SECURITY_AUDIT_LOG
+-- =========================================================
+CREATE TABLE IF NOT EXISTS reconciliation.security_audit_log (
+    id BIGSERIAL PRIMARY KEY,
+    usuario VARCHAR(120) NOT NULL,
+    accion VARCHAR(120) NOT NULL,
+    fecha TIMESTAMP WITH TIME ZONE NOT NULL,
+    resultado VARCHAR(30) NOT NULL,
+    detalle VARCHAR(500),
+    estado VARCHAR(40),
+    valor_antes JSONB,
+    valor_despues JSONB
+);
+
+-- =========================================================
+-- 22. CARRIER PORTAL
+-- =========================================================
+CREATE TABLE reconciliation.carrier_portal (
+    id                  BIGSERIAL PRIMARY KEY,
+    carrier_id          BIGINT,
+    code                VARCHAR(50) NOT NULL UNIQUE,
+    display_name        VARCHAR(150) NOT NULL,
+    portal_url          VARCHAR(1000) NOT NULL,
+    logo_url            VARCHAR(1000),
+    description         VARCHAR(500),
+    active              BOOLEAN NOT NULL DEFAULT TRUE,
+    sort_order          INTEGER NOT NULL DEFAULT 0,
+    allow_upload        BOOLEAN NOT NULL DEFAULT TRUE,
+    allow_download      BOOLEAN NOT NULL DEFAULT TRUE,
+    requires_mfa        BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by          VARCHAR(100) NOT NULL,
+    updated_at          TIMESTAMP,
+    updated_by          VARCHAR(100),
+    CONSTRAINT fk_carrier_portal_carrier FOREIGN KEY (carrier_id) REFERENCES reconciliation.carrier(id)
+);
+
+-- =========================================================
+-- 23. CARRIER PORTAL DOMAIN
+-- =========================================================
+CREATE TABLE reconciliation.carrier_portal_domain (
+    id                  BIGSERIAL PRIMARY KEY,
+    carrier_portal_id   BIGINT NOT NULL,
+    domain_pattern      VARCHAR(500) NOT NULL,
+    domain_type         VARCHAR(30) NOT NULL DEFAULT 'PRIMARY',
+    active              BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_carrier_portal_domain
+        FOREIGN KEY (carrier_portal_id)
+        REFERENCES reconciliation.carrier_portal(id)
+);
+
+-- =========================================================
 -- 18. INDICES
 -- =========================================================
 
 CREATE INDEX IF NOT EXISTS idx_agency_carrier_id
-    ON agency(carrier_id);
+    ON reconciliation.agency(carrier_id);
 
 CREATE INDEX IF NOT EXISTS idx_producer_agency_id
-    ON producer(agency_id);
+    ON reconciliation.producer(agency_id);
 
 CREATE INDEX IF NOT EXISTS idx_client_full_name
-    ON client(full_name);
+    ON reconciliation.client(full_name);
 
 CREATE INDEX IF NOT EXISTS idx_source_file_carrier_id
-    ON source_file(carrier_id);
+    ON reconciliation.source_file(carrier_id);
 
 CREATE INDEX IF NOT EXISTS idx_source_file_processing_status_id
-    ON source_file(processing_status_id);
+    ON reconciliation.source_file(processing_status_id);
 
 CREATE INDEX IF NOT EXISTS idx_execution_plan_task_source_file
-    ON execution_plan_task(id_source_file);
+    ON reconciliation.execution_plan_task(id_source_file);
 
 CREATE INDEX IF NOT EXISTS idx_execution_plan_task_status
-    ON execution_plan_task(id_status);
+    ON reconciliation.execution_plan_task(id_status);
 
 CREATE INDEX IF NOT EXISTS idx_execution_plan_task_code
-    ON execution_plan_task(plan_execute_code);
+    ON reconciliation.execution_plan_task(plan_execute_code);
 
 CREATE INDEX IF NOT EXISTS idx_scheduled_task_execution_plan
-    ON scheduled_task(id_execution_plan_task);
+    ON reconciliation.scheduled_task(id_execution_plan_task);
 
 CREATE INDEX IF NOT EXISTS idx_scheduled_task_status
-    ON scheduled_task(id_status);
+    ON reconciliation.scheduled_task(id_status);
 
 CREATE INDEX IF NOT EXISTS idx_scheduled_task_type
-    ON scheduled_task(id_task_type);
+    ON reconciliation.scheduled_task(id_task_type);
 
 CREATE INDEX IF NOT EXISTS idx_scheduled_task_plan_order
-    ON scheduled_task(id_execution_plan_task, task_order);
+    ON reconciliation.scheduled_task(id_execution_plan_task, task_order);
 
 CREATE INDEX IF NOT EXISTS idx_scheduled_task_active_status
-    ON scheduled_task(active, id_status);
+    ON reconciliation.scheduled_task(active, id_status);
 
 CREATE INDEX IF NOT EXISTS idx_raw_import_record_file_id
-    ON raw_import_record(source_file_id);
+    ON reconciliation.raw_import_record(source_file_id);
 
 CREATE INDEX IF NOT EXISTS idx_raw_import_record_sheet_id
-    ON raw_import_record(source_file_sheet_id);
+    ON reconciliation.raw_import_record(source_file_sheet_id);
 
 CREATE INDEX IF NOT EXISTS idx_raw_import_record_parse_status_id
-    ON raw_import_record(parse_status_id);
+    ON reconciliation.raw_import_record(parse_status_id);
 
 CREATE INDEX IF NOT EXISTS idx_raw_import_record_payload_gin
-    ON raw_import_record USING GIN(raw_payload);
+    ON reconciliation.raw_import_record USING GIN(raw_payload);
 
 CREATE INDEX IF NOT EXISTS idx_validation_source_plan_source_file_id
     ON reconciliation.validation_source_plan(source_file_id);
@@ -865,97 +919,97 @@ CREATE INDEX IF NOT EXISTS idx_source_file_validation_column_name
     ON reconciliation.source_file_validation(column_name);
 
 CREATE INDEX IF NOT EXISTS idx_policy_carrier_id
-    ON policy(carrier_id);
+    ON reconciliation.policy(carrier_id);
 
 CREATE INDEX IF NOT EXISTS idx_policy_client_id
-    ON policy(client_id);
+    ON reconciliation.policy(client_id);
 
 CREATE INDEX IF NOT EXISTS idx_policy_subscriber_id
-    ON policy(subscriber_id);
+    ON reconciliation.policy(subscriber_id);
 
 CREATE INDEX IF NOT EXISTS idx_policy_status_id
-    ON policy(status_id);
+    ON reconciliation.policy(status_id);
 
 CREATE INDEX IF NOT EXISTS idx_policy_effective_date
-    ON policy(effective_date);
+    ON reconciliation.policy(effective_date);
 
 CREATE INDEX IF NOT EXISTS idx_policy_status_history_policy_id
-    ON policy_status_history(policy_id);
+    ON reconciliation.policy_status_history(policy_id);
 
 CREATE INDEX IF NOT EXISTS idx_policy_status_history_status_id
-    ON policy_status_history(status_id);
+    ON reconciliation.policy_status_history(status_id);
 
 CREATE INDEX IF NOT EXISTS idx_commission_assignment_policy_id
-    ON commission_assignment(policy_id);
+    ON reconciliation.commission_assignment(policy_id);
 
 CREATE INDEX IF NOT EXISTS idx_commission_assignment_producer_id
-    ON commission_assignment(producer_id);
+    ON reconciliation.commission_assignment(producer_id);
 
 CREATE INDEX IF NOT EXISTS idx_commission_statement_source_file_id
-    ON commission_statement(source_file_id);
+    ON reconciliation.commission_statement(source_file_id);
 
 CREATE INDEX IF NOT EXISTS idx_commission_statement_policy_id
-    ON commission_statement(policy_id);
+    ON reconciliation.commission_statement(policy_id);
 
 CREATE INDEX IF NOT EXISTS idx_commission_statement_producer_id
-    ON commission_statement(producer_id);
+    ON reconciliation.commission_statement(producer_id);
 
 CREATE INDEX IF NOT EXISTS idx_commission_statement_paid_date
-    ON commission_statement(paid_date);
+    ON reconciliation.commission_statement(paid_date);
 
 CREATE INDEX IF NOT EXISTS idx_commission_statement_invoice
-    ON commission_statement(invoice_number);
+    ON reconciliation.commission_statement(invoice_number);
 
 CREATE INDEX IF NOT EXISTS idx_commission_statement_raw_status_id
-    ON commission_statement(raw_status_id);
+    ON reconciliation.commission_statement(raw_status_id);
 
 CREATE INDEX IF NOT EXISTS idx_commission_statement_reason_code_id
-    ON commission_statement(reason_code_id);
+    ON reconciliation.commission_statement(reason_code_id);
 
 CREATE INDEX IF NOT EXISTS idx_commission_statement_item_statement_id
-    ON commission_statement_item(commission_statement_id);
+    ON reconciliation.commission_statement_item(commission_statement_id);
 
 CREATE INDEX IF NOT EXISTS idx_commission_rule_carrier_id
-    ON commission_rule(carrier_id);
+    ON reconciliation.commission_rule(carrier_id);
 
 CREATE INDEX IF NOT EXISTS idx_commission_rule_role_id
-    ON commission_rule(role_id);
+    ON reconciliation.commission_rule(role_id);
 
 CREATE INDEX IF NOT EXISTS idx_commission_rule_type_id
-    ON commission_rule(rule_type_id);
+    ON reconciliation.commission_rule(rule_type_id);
 
 CREATE INDEX IF NOT EXISTS idx_reconciliation_case_source_file_id
-    ON reconciliation_case(source_file_id);
+    ON reconciliation.reconciliation_case(source_file_id);
 
 CREATE INDEX IF NOT EXISTS idx_reconciliation_case_policy_id
-    ON reconciliation_case(policy_id);
+    ON reconciliation.reconciliation_case(policy_id);
 
 CREATE INDEX IF NOT EXISTS idx_reconciliation_case_producer_id
-    ON reconciliation_case(producer_id);
+    ON reconciliation.reconciliation_case(producer_id);
 
 CREATE INDEX IF NOT EXISTS idx_reconciliation_case_case_type_id
-    ON reconciliation_case(case_type_id);
+    ON reconciliation.reconciliation_case(case_type_id);
 
 CREATE INDEX IF NOT EXISTS idx_reconciliation_case_severity_id
-    ON reconciliation_case(severity_id);
+    ON reconciliation.reconciliation_case(severity_id);
 
 CREATE INDEX IF NOT EXISTS idx_reconciliation_case_status_id
-    ON reconciliation_case(status_id);
+    ON reconciliation.reconciliation_case(status_id);
 
 CREATE INDEX IF NOT EXISTS idx_commission_payment_producer_id
-    ON commission_payment(producer_id);
+    ON reconciliation.commission_payment(producer_id);
 
 CREATE INDEX IF NOT EXISTS idx_commission_payment_status_id
-    ON commission_payment(status_id);
+    ON reconciliation.commission_payment(status_id);
 
 CREATE INDEX IF NOT EXISTS idx_audit_log_entity_name
-    ON audit_log(entity_name);
+    ON reconciliation.audit_log(entity_name);
 
 CREATE INDEX IF NOT EXISTS idx_audit_log_event_timestamp
-    ON audit_log(event_timestamp);
+    ON reconciliation.audit_log(event_timestamp);
 
 CREATE INDEX IF NOT EXISTS idx_audit_log_action_id
-    ON audit_log(action_id);
+    ON reconciliation.audit_log(action_id);
 
 CREATE INDEX IF NOT EXISTS idx_source_file_traceability_source_file_id
     ON reconciliation.source_file_traceability (source_file_id);	
@@ -991,7 +1045,7 @@ CREATE INDEX IF NOT EXISTS idx_city_name
 -- 17. DATOS SEMILLA - CARRIER
 -- =========================================================
 
-INSERT INTO carrier (code, name, description, created_by)
+INSERT INTO reconciliation.carrier (code, name, description, created_by)
 VALUES
     ('ELITE', 'ELITE', 'Fuente de datos ELITE', 'system'),
     ('SENTARA', 'SENTARA', 'Fuente de datos SENTARA', 'system'),
@@ -1003,7 +1057,7 @@ ON CONFLICT (code) DO NOTHING;
 -- 18. DATOS SEMILLA - PARAMETER (IDS FIJOS)
 -- =========================================================
 
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (1,'PRESIGNED','URL prefirmada generada para carga del archivo','Prefirmado','SOURCE_FILE_STATUS',TRUE,1,'system'),
 (2,'S3_UPLOAD','Archivo cargado correctamente en S3','Cargado en S3','SOURCE_FILE_STATUS',TRUE,2,'system'),
@@ -1027,7 +1081,7 @@ updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
 
 -- GROUP: PARSE_STATUS (12 - 14)
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (12,'PENDING','Fila pendiente de parseo','Pendiente','PARSE_STATUS',TRUE,1,'system'),
 (13,'PARSED','Fila parseada correctamente','Parseado','PARSE_STATUS',TRUE,2,'system'),
@@ -1043,7 +1097,7 @@ updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
 
 -- GROUP: POLICY_STATUS (15 - 21)
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (15,'PENDING','Póliza pendiente','Pendiente','POLICY_STATUS',TRUE,1,'system'),
 (16,'ACTIVE','Póliza activa','Activa','POLICY_STATUS',TRUE,2,'system'),
@@ -1063,7 +1117,7 @@ updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
 
 -- GROUP: PRODUCER_ROLE_TYPE (22 - 27)
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (22,'PRIMARY_AGENT','Agente principal de la póliza','Agente Principal','PRODUCER_ROLE_TYPE',TRUE,1,'system'),
 (23,'SUB_AGENT','Subagente asociado','Subagente','PRODUCER_ROLE_TYPE',TRUE,2,'system'),
@@ -1082,7 +1136,7 @@ updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
 
 -- GROUP: COMMISSION_RULE_TYPE (28 - 32)
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (28,'FIXED_AMOUNT','Regla por monto fijo','Monto Fijo','COMMISSION_RULE_TYPE',TRUE,1,'system'),
 (29,'PERCENTAGE','Regla por porcentaje','Porcentaje','COMMISSION_RULE_TYPE',TRUE,2,'system'),
@@ -1100,7 +1154,7 @@ updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
 
 -- GROUP: RECONCILIATION_CASE_TYPE (33 - 42)
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (33,'PAYMENT_ON_CANCELLED_POLICY','Se detectó pago a póliza cancelada','Pago sobre Póliza Cancelada','RECONCILIATION_CASE_TYPE',TRUE,1,'system'),
 (34,'PAYMENT_WITHOUT_ASSIGNMENT','No existe asignación válida para pagar','Pago sin Asignación','RECONCILIATION_CASE_TYPE',TRUE,2,'system'),
@@ -1123,7 +1177,7 @@ updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
 
 -- GROUP: SEVERITY_LEVEL (43 - 46)
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (43,'LOW','Severidad baja','Baja','SEVERITY_LEVEL',TRUE,1,'system'),
 (44,'MEDIUM','Severidad media','Media','SEVERITY_LEVEL',TRUE,2,'system'),
@@ -1140,7 +1194,7 @@ updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
 
 -- GROUP: CASE_STATUS (47 - 50)
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (47,'OPEN','Caso abierto','Abierto','CASE_STATUS',TRUE,1,'system'),
 (48,'IN_REVIEW','Caso en revisión','En Revisión','CASE_STATUS',TRUE,2,'system'),
@@ -1157,7 +1211,7 @@ updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
 
 -- GROUP: PAYMENT_STATUS (51 - 56)
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (51,'DRAFT','Liquidación en borrador','Borrador','PAYMENT_STATUS',TRUE,1,'system'),
 (52,'GENERATED','Pago generado','Generado','PAYMENT_STATUS',TRUE,2,'system'),
@@ -1176,7 +1230,7 @@ updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
 
 -- GROUP: AUDIT_ACTION_TYPE (57 - 64)
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (57,'INSERT','Creación de registro','Inserción','AUDIT_ACTION_TYPE',TRUE,1,'system'),
 (58,'UPDATE','Actualización de registro','Actualización','AUDIT_ACTION_TYPE',TRUE,2,'system'),
@@ -1197,7 +1251,7 @@ updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
 
 -- GROUP: COMMISSION_RAW_STATUS (65 - 69)
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (65,'ACTIVE','Estado crudo activo','Activo','COMMISSION_RAW_STATUS',TRUE,1,'system'),
 (66,'INACTIVE','Estado crudo inactivo','Inactivo','COMMISSION_RAW_STATUS',TRUE,2,'system'),
@@ -1215,7 +1269,7 @@ updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
 
 -- GROUP: REASON_CODE (70 - 75)
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (70,'NEW_BUSINESS','Alta o nueva venta','Nuevo Negocio','REASON_CODE',TRUE,1,'system'),
 (71,'RENEWAL','Renovación de póliza','Renovación','REASON_CODE',TRUE,2,'system'),
@@ -1235,7 +1289,7 @@ updated_by = EXCLUDED.created_by;
 
 
 -- GROUP: SOURCE_FILE_VALIDATION_TYPE (91 - 103)
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (91,'FILE_EXISTS','Valida que el archivo exista en el repositorio S3','Archivo Existe','SOURCE_FILE_VALIDATION_TYPE',TRUE,1,'system'),
 (92,'FILE_EXTENSION','Valida que la extensión del archivo sea CSV','Extensión Archivo','SOURCE_FILE_VALIDATION_TYPE',TRUE,2,'system'),
@@ -1261,7 +1315,7 @@ updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
 
 -- GROUP: SOURCE_FILE_VALIDATION_STATUS (104 - 106)
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (104,'SUCCESS','Validación ejecutada correctamente','Exitoso','SOURCE_FILE_VALIDATION_STATUS',TRUE,1,'system'),
 (105,'WARNING','Validación ejecutada con advertencia','Advertencia','SOURCE_FILE_VALIDATION_STATUS',TRUE,2,'system'),
@@ -1277,7 +1331,7 @@ updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
 
 -- GROUP: VALIDATION_SOURCE_PLAN_STATUS (107 - 110)
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (107,'PENDING','Plan de validación pendiente por iniciar','Pendiente','VALIDATION_SOURCE_PLAN_STATUS',TRUE,1,'system'),
 (108,'PROCESS','Plan de validación en procesamiento','Proceso','VALIDATION_SOURCE_PLAN_STATUS',TRUE,2,'system'),
@@ -1294,7 +1348,7 @@ updated_at = CURRENT_TIMESTAMP,
 updated_by = EXCLUDED.created_by;
 
 -- GROUP: VALIDATION_HEADER_STRUCTURE (111 - 123)
-INSERT INTO parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
+INSERT INTO reconciliation.parameter (id, name, description, value, parameter_group, active, sort_order, created_by)
 VALUES
 (111,'carrier_code','Codigo de la Aseguradora','carrier_code_1','VALIDATION_HEADER_STRUCTURE',TRUE,1,'system'),
 (112,'producer_external_id','Codigo del Comisionista','producer_external_id_1','VALIDATION_HEADER_STRUCTURE',TRUE,2,'system'),

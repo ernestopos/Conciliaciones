@@ -21,7 +21,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
     @RestController
-    @RequestMapping("/api/v1/producers")
+    @RequestMapping("/api/core/v1/producers")
     @RequiredArgsConstructor
     @Slf4j
     @Tag(name = "Producer", description = "Operaciones CRUD para Producer")

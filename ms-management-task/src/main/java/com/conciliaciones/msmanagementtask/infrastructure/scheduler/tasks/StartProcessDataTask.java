@@ -20,6 +20,10 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Slf4j
 @Component("startProcessDataTask")
 @RequiredArgsConstructor
@@ -52,10 +56,13 @@ public class StartProcessDataTask extends AbstractManagementTask {
     private static final String NET_AMOUNT_FIELD = "net_amount";
     private static final String RATE_FIELD = "rate";
     private static final String COMMISSION_RATE_PCT_FIELD = "commission_rate_pct";
-
-
     private static final String STATUS_ACTIVE = "Activa";
     private static final String STATUS_APPROVED = "Aprobada";
+
+    private static final Long CASE_TYPE_AMOUNT_MISMATCH_ID = 37L;
+    private static final Long CASE_TYPE_UNKNOWN_STATUS_ID = 40L;
+    private static final Long CASE_SEVERITY_LOW_ID = 43L;
+    private static final Long CASE_STATUS_IN_REVIEW_ID = 48L;
 
     private final RawImportRecordRepository rawImportRecordRepository;
     private final ClientRepository clientRepository;
@@ -223,10 +230,8 @@ public class StartProcessDataTask extends AbstractManagementTask {
         entityManager.persist(history);
     }
 
-    private void createCommissionStatement(JsonNode payload,SourceFileEntity sourceFile,RawImportRecordEntity rawRecord,ClientEntity client,PolicyEntity policy) {
+    private void createCommissionStatementBefore(JsonNode payload,SourceFileEntity sourceFile,RawImportRecordEntity rawRecord,ClientEntity client,PolicyEntity policy) {
         LocalDateTime now = LocalDateTime.now();
-
-
         String external_producer_Id_Value = getText(payload, PRODUCER_EXTERNAL_ID);
         ProducerEntity producer = producerRepository.findByExternalProducerId(external_producer_Id_Value)
                 .orElseThrow(() -> new RuntimeException("Producer no encontrado: " + external_producer_Id_Value));
@@ -254,6 +259,169 @@ public class StartProcessDataTask extends AbstractManagementTask {
         item.setCreatedAt(now);
         item.setCreatedBy(SYSTEM_USER);
         entityManager.persist(item);
+    }
+
+    private void createCommissionStatement(JsonNode payload,SourceFileEntity sourceFile,RawImportRecordEntity rawRecord,ClientEntity client,PolicyEntity policy) {
+        LocalDateTime now = LocalDateTime.now();
+
+        String externalProducerId = getText(payload,PRODUCER_EXTERNAL_ID);
+
+        ProducerEntity producer = producerRepository.findByExternalProducerId(externalProducerId)
+                .orElseThrow(() -> new IllegalStateException("Producer no encontrado: " + externalProducerId));
+
+        CommissionStatementEntity statement = new CommissionStatementEntity();
+        statement.setSourceFileId(sourceFile.getId());
+        statement.setRawImportRecordId(rawRecord.getId());
+        statement.setCarrierId(sourceFile.getCarrierId());
+        statement.setClientId(client.getId());
+        statement.setProducerId(producer.getId());
+        statement.setAgencyId(producer.getAgencyId());
+        statement.setPolicyId(policy.getId());
+        statement.setStatementDate(getLocalDate(payload, STATEMENT_DATE_FIELD));
+        statement.setPaidDate(getLocalDate(payload, PAID_DATE_FIELD));
+        statement.setRowIdentifier(rawRecord.getSourceRowKey());
+        statement.setSourceRowNumber(rawRecord.getRowNumber());
+        statement.setCreatedAt(now);
+        statement.setCreatedBy(SYSTEM_USER);
+        entityManager.persist(statement);
+        entityManager.flush();
+
+        BigDecimal netAmount = getBigDecimal(payload,NET_AMOUNT_FIELD);
+        BigDecimal rate = getBigDecimal(payload,RATE_FIELD);
+        BigDecimal commissionRatePct = getBigDecimal(payload,COMMISSION_RATE_PCT_FIELD);
+
+
+        CommissionStatementItemEntity item = new CommissionStatementItemEntity();
+        item.setCommissionStatementId(statement.getId());
+        item.setNetAmount(netAmount);
+        item.setRate(rate);
+        item.setCommissionRatePct(commissionRatePct);
+        item.setCreatedAt(now);
+        item.setCreatedBy(SYSTEM_USER);
+
+        entityManager.persist(item);
+        entityManager.flush();
+
+        /*
+         * Regla 1:
+         * Si netAmount, rate o commissionRatePct son negativos,
+         * se crea un caso AMOUNT_MISMATCH.
+         */
+        if (hasNegativeCommissionValues(netAmount,rate,commissionRatePct)) {
+            String description = buildNegativeValuesDescription(sourceFile,rawRecord,policy,netAmount,rate,commissionRatePct);
+            createReconciliationCase(sourceFile,policy,producer,statement,item,CASE_TYPE_AMOUNT_MISMATCH_ID,description,"Revisar y corregir los valores negativos " + "reportados en el archivo fuente.", now);
+        }
+
+        /*
+         * Regla 2:
+         * Si el estado de la póliza no está configurado dentro de
+         * POLICY_STATUS_PERMITTED, se crea un caso UNKNOWN_STATUS.
+         */
+        Set<Long> permittedPolicyStatusIds = resolvePermittedPolicyStatusIds();
+        Long policyStatusId = getPolicyStatusId(policy);
+
+        if (!permittedPolicyStatusIds.contains(policyStatusId)) {
+            String description = String.format(
+                    "La póliza %s tiene el estado con id %s, "
+                            + "el cual no está permitido para la "
+                            + "liquidación del pago. "
+                            + "Estados permitidos: %s. "
+                            + "Archivo fuente: %s, fila: %s.",
+                    policy.getPolicyNumber(),
+                    policyStatusId,
+                    permittedPolicyStatusIds,
+                    sourceFile.getId(),
+                    rawRecord.getRowNumber()
+            );
+            createReconciliationCase(sourceFile,policy,producer,statement,item,CASE_TYPE_UNKNOWN_STATUS_ID,description,"Revisar el estado de la póliza antes de continuar con la liquidación del pago.",now);
+        }
+    }
+
+    private boolean hasNegativeCommissionValues(BigDecimal netAmount,BigDecimal rate,BigDecimal commissionRatePct) {
+        return isNegative(netAmount) || isNegative(rate) || isNegative(commissionRatePct);
+    }
+
+    private boolean isNegative(BigDecimal value) {
+        return value != null && value.compareTo(BigDecimal.ZERO) < 0;
+    }
+
+    private Set<Long> resolvePermittedPolicyStatusIds() {
+
+        Object value = entityManager.createNativeQuery("""
+                    SELECT value
+                    FROM reconciliation.parameter
+                    WHERE parameter_group = 'POLICY_STATUS_PERMITTED'
+                      AND name = 'STATUS_PERMITTED'
+                      AND active = true
+                    LIMIT 1
+                    """).getSingleResult();
+        return Arrays.stream(value.toString().split(","))
+                .map(String::trim)
+                .map(Long::valueOf)
+                .collect(Collectors.toSet());
+    }
+
+    private Long getPolicyStatusId(PolicyEntity policy) {
+        if (policy.getStatusId() == null) {
+            throw new IllegalStateException(
+                    "La póliza " + policy.getPolicyNumber()
+                            + " no tiene estado asociado."
+            );
+        }
+        return policy.getStatusId().getId();
+    }
+
+    private String buildNegativeValuesDescription(SourceFileEntity sourceFile, RawImportRecordEntity rawRecord, PolicyEntity policy,BigDecimal netAmount,BigDecimal rate,BigDecimal commissionRatePct) {
+        StringBuilder values = new StringBuilder();
+
+        if (isNegative(netAmount)) {
+            values.append("Net Amount=").append(netAmount);
+        }
+
+        if (isNegative(rate)) {
+            if (!values.isEmpty()) {
+                values.append(", ");
+            }
+            values.append("Rate=").append(rate);
+        }
+
+        if (isNegative(commissionRatePct)) {
+            if (!values.isEmpty()) {
+                values.append(", ");
+            }
+            values.append("Commission Rate=").append(commissionRatePct);
+        }
+        return String.format("Se detectaron valores negativos para la póliza %s. Valores: %s. Archivo %s - Fila %s.",policy.getPolicyNumber(),values,sourceFile.getId(),rawRecord.getRowNumber());
+    }
+
+    private void createReconciliationCase(
+            SourceFileEntity sourceFile,
+            PolicyEntity policy,
+            ProducerEntity producer,
+            CommissionStatementEntity statement,
+            CommissionStatementItemEntity item,
+            Long caseTypeId,
+            String description,
+            String suggestedAction,
+            LocalDateTime now
+    ) {
+        ReconciliationCaseEntity reconciliationCase = new ReconciliationCaseEntity();
+        reconciliationCase.setSourceFileId(sourceFile.getId());
+        reconciliationCase.setCommissionStatementId(statement.getId());
+        reconciliationCase.setCommissionStatementItemId(item.getId());
+        reconciliationCase.setCarrierId(sourceFile.getCarrierId());
+        reconciliationCase.setPolicyId(policy.getId());
+        reconciliationCase.setProducerId(producer.getId());
+        reconciliationCase.setCaseTypeId(caseTypeId);
+        reconciliationCase.setSeverityId(CASE_SEVERITY_LOW_ID);
+        reconciliationCase.setStatusId(CASE_STATUS_IN_REVIEW_ID);
+        reconciliationCase.setDetectedAt(now);
+        reconciliationCase.setDescription(description);
+        reconciliationCase.setSuggestedAction(suggestedAction);
+        reconciliationCase.setCreatedAt(now);
+        reconciliationCase.setCreatedBy(SYSTEM_USER);
+        entityManager.persist(reconciliationCase);
+        log.info("Caso de conciliación creado. policyId={}, caseType={}",policy.getId(),caseTypeId);
     }
 
     private Optional<ClientEntity> findClientByExternalClientId(String externalClientId) {

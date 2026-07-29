@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/security/menus")
+@RequestMapping("/api/core/v1/security/menus")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Security Menus", description = "Consulta de menús y submenús de seguridad")

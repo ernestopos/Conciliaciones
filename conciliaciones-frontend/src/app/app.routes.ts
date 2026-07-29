@@ -18,6 +18,7 @@ import { ReportsPageComponent } from './features/reportes/reports-page.component
 import { SecurityUsersPageComponent } from './features/security/users/security-users-page.component';
 import { SecurityRoleMenuPermissionsPageComponent } from './features/security/role-menu-permissions/security-role-menu-permissions-page.component';
 import { SecurityUserRolesPageComponent } from './features/security/user-roles/security-user-roles-page.component';
+import { SecureUsAccessPageComponent } from './features/carrier-portal/secure-us-access/secure-us-access-page.component';
 
 const agencyCrudConfig: CrudRouteConfig = {
   resourceKey: 'agencies',
@@ -191,6 +192,7 @@ export const routes: Routes = [
       { path: 'pagos/liquidaciones', component: CommissionPaymentsPageComponent },
       { path: 'auditoria/registros', component: DomainPlaceholderComponent, data: { title: 'Auditoría' } },
       { path: 'reportes', component: ReportsPageComponent },
+      { path: 'carrier-portal/secure-us-access', component: SecureUsAccessPageComponent },
       { path: 'upload-files/upload-sources-file',  component: UploadSourcesFilePageComponent },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' }
     ]

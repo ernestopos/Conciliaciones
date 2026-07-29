@@ -2,7 +2,10 @@ package com.conciliaciones.reconciliation.core.infrastructure.adapter.out.persis
 
 import com.conciliaciones.domain.entity.PolicyEntity;
 import com.conciliaciones.persistence.repository.PolicyRepository;
+import com.conciliaciones.persistence.repository.projection.DonutCharValTolProjection;
 import com.conciliaciones.reconciliation.core.application.port.out.policy.PolicyPersistencePort;
+
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,5 +49,13 @@ public class PolicyPersistenceAdapter implements PolicyPersistencePort {
         log.info("LOG INICIO X = deletePolicyPersistence id={}", id);
         repository.deleteById(id);
         log.info("LOG FIN X = deletePolicyPersistence id={}", id);
+    }
+
+    @Override
+    public List<DonutCharValTolProjection> charPolicyCreate() {
+        log.info("LOG INICIO X = charPolicyCreate");
+        List<DonutCharValTolProjection> result = repository.charPolicyCreate();
+        log.info("LOG FIN X = charPolicyCreate totalElements={}", result.size());
+        return result;
     }
 }

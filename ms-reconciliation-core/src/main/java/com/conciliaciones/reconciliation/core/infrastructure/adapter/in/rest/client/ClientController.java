@@ -24,7 +24,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 
     @RestController
-    @RequestMapping("/api/v1/clients")
+    @RequestMapping("/api/core/v1/clients")
     @RequiredArgsConstructor
     @Slf4j
     @Tag(name = "Client", description = "Operaciones CRUD para Client")

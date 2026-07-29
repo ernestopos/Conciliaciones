@@ -1,7 +1,8 @@
     package com.conciliaciones.reconciliation.core.application.usecase.reconciliationCase;
 
     import com.conciliaciones.domain.entity.ReconciliationCaseEntity;
-import com.conciliaciones.reconciliation.core.application.port.in.reconciliationCase.CreateReconciliationCaseUseCase;
+    import com.conciliaciones.persistence.repository.projection.DonutCharValTolProjection;
+    import com.conciliaciones.reconciliation.core.application.port.in.reconciliationCase.CreateReconciliationCaseUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.reconciliationCase.DeleteReconciliationCaseUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.reconciliationCase.GetReconciliationCaseByIdUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.reconciliationCase.ListReconciliationCasesUseCase;
@@ -13,7 +14,9 @@ import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto
 import com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.dto.reconciliationCase.UpdateReconciliationCaseRequest;
 import com.conciliaciones.reconciliation.core.infrastructure.exception.ResourceNotFoundException;
 import java.time.LocalDateTime;
-import lombok.RequiredArgsConstructor;
+    import java.util.List;
+
+    import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -69,6 +72,14 @@ import org.springframework.stereotype.Service;
             log.info("LOG INICIO X = listReconciliationCases page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
             Page<ReconciliationCaseResponse> result = persistencePort.findAll(pageable).map(this::toResponse);
             log.info("LOG FIN X = listReconciliationCases totalElements={}", result.getTotalElements());
+            return result;
+        }
+
+        @Override
+        public List<DonutCharValTolProjection> charReconcilationCase() {
+            log.info("LOG INICIO X = charPolicyCreate page={} size={}");
+            List<DonutCharValTolProjection> result = persistencePort.charReconcilationCase();
+            log.info("LOG FIN X = charPolicyCreate totalElements={}", result.size());
             return result;
         }
 

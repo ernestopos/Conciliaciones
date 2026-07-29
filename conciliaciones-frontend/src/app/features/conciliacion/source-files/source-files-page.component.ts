@@ -33,7 +33,7 @@ export class SourceFilesPageComponent implements OnInit {
     'fileExtension',
     'fileSizeBytes',
     's3Bucket',
-    'processingStatusId',
+    'processingStatusName',
     'uploadDate',
     'uploadedBy'
   ];
@@ -45,7 +45,7 @@ export class SourceFilesPageComponent implements OnInit {
     fileExtension: 'Extensión',
     fileSizeBytes: 'Tamaño bytes',
     s3Bucket: 'Bucket',
-    processingStatusId: 'Estado',
+    processingStatusName: 'Estado',
     uploadDate: 'Fecha carga',
     uploadedBy: 'Usuario'
   };

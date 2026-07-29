@@ -12,4 +12,6 @@ public interface AuthUseCase {
     UserValidationResult validate(String authorizationHeader);
 
     List<String> getRoles(String authorizationHeader);
+
+    LoginResult refresh(String refreshToken);
 }

@@ -13,6 +13,7 @@ export interface SourceFileModel {
   uploadDate: string;
   uploadedBy?: string | null;
   processingStatusId: number;
+  processingStatusName: string;
   errorMessage?: string | null;
   totalRows?: number | null;
   processedRows?: number | null;
