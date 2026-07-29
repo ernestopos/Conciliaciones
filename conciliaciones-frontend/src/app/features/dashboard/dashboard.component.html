@@ -1,19 +1,33 @@
-<app-page-header title="Dashboard" subtitle="Resumen ejecutivo para demo" />
+<app-page-header title="Dashboard" subtitle="Resumen ejecutivo" />
 
-<section class="cards">
-  <mat-card *ngFor="let card of cards">
-    <h4>{{ card.label }}</h4>
-    <strong>{{ card.value }}</strong>
-  </mat-card>
+<section class="dashboard-charts">
+  <app-donut-summary-chart
+    title="Número de archivos cargados"
+    subtitle="Distribución por estado"
+    icon="description"
+    iconTone="blue"
+    [items]="fileChartItems"
+    [loading]="loading"
+    [errorMessage]="fileChartError">
+  </app-donut-summary-chart>
+
+  <app-donut-summary-chart
+    title="# Pólizas"
+    subtitle="Distribución por estado"
+    icon="shield"
+    iconTone="green"
+    [items]="policyChartItems"
+    [loading]="loading"
+    [errorMessage]="policyChartError">
+  </app-donut-summary-chart>
+
+  <app-donut-summary-chart
+    title="# Casos de conciliación"
+    subtitle="Distribución por estado"
+    icon="rule"
+    iconTone="orange"
+    [items]="reconciliationCaseChartItems"
+    [loading]="loading"
+    [errorMessage]="reconciliationCaseChartError">
+  </app-donut-summary-chart>
 </section>
-
-<mat-card>
-  <h3>Auditorías recientes</h3>
-  <table mat-table [dataSource]="recentAudit">
-    <ng-container matColumnDef="event"><th mat-header-cell *matHeaderCellDef>Evento</th><td mat-cell *matCellDef="let row">{{row.event}}</td></ng-container>
-    <ng-container matColumnDef="user"><th mat-header-cell *matHeaderCellDef>Usuario</th><td mat-cell *matCellDef="let row">{{row.user}}</td></ng-container>
-    <ng-container matColumnDef="status"><th mat-header-cell *matHeaderCellDef>Estado</th><td mat-cell *matCellDef="let row"><app-status-chip [label]="row.status" [status]="row.status === 'OK' ? 'success' : 'warning'" /></td></ng-container>
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-  </table>
-</mat-card>

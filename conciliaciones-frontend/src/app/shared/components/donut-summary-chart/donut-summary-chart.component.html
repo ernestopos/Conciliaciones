@@ -1,0 +1,66 @@
+<mat-card class="chart-card">
+  <header class="chart-card__header">
+    <div class="chart-card__identity">
+      <span class="chart-card__icon" [class.chart-card__icon--green]="iconTone === 'green'">
+        <mat-icon>{{ icon }}</mat-icon>
+      </span>
+
+      <div>
+        <h2>{{ title }}</h2>
+        <p>{{ subtitle }}</p>
+      </div>
+    </div>
+
+    <button class="chart-card__menu" type="button" aria-label="Más opciones">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+  </header>
+
+  <section class="chart-card__body">
+    <div *ngIf="loading" class="chart-state">
+      <mat-spinner diameter="42"></mat-spinner>
+      <span>Cargando información...</span>
+    </div>
+
+    <div *ngIf="!loading && errorMessage" class="chart-state chart-state--error">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ errorMessage }}</span>
+    </div>
+
+    <div *ngIf="!loading && !errorMessage && items.length === 0" class="chart-state">
+      <mat-icon>donut_large</mat-icon>
+      <span>No hay datos disponibles.</span>
+    </div>
+
+    <ng-container *ngIf="!loading && !errorMessage && items.length > 0">
+      <div class="chart-wrapper">
+        <apx-chart
+          [series]="chartOptions.series"
+          [chart]="chartOptions.chart"
+          [labels]="chartOptions.labels"
+          [colors]="chartOptions.colors"
+          [dataLabels]="chartOptions.dataLabels"
+          [legend]="chartOptions.legend"
+          [plotOptions]="chartOptions.plotOptions"
+          [stroke]="chartOptions.stroke"
+          [fill]="chartOptions.fill"
+          [tooltip]="chartOptions.tooltip"
+          [responsive]="chartOptions.responsive">
+        </apx-chart>
+      </div>
+
+      <div class="chart-legend" aria-label="Leyenda del gráfico">
+        <div class="chart-legend__item" *ngFor="let item of items">
+          <span class="chart-legend__dot" [style.background]="item.color"></span>
+          <span class="chart-legend__name" [title]="item.statusName">{{ item.statusName }}</span>
+          <strong>{{ formatNumber(item.total) }} ({{ percentage(item.total) }}%)</strong>
+        </div>
+      </div>
+    </ng-container>
+  </section>
+
+  <footer class="chart-card__footer">
+    <mat-icon>calendar_today</mat-icon>
+    <span>Información consolidada</span>
+  </footer>
+</mat-card>

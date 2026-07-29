@@ -19,7 +19,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/commission-payments")
+@RequestMapping("/api/core/v1/commission-payments")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Commission Payments", description = "Consulta de pagos de comisiones")

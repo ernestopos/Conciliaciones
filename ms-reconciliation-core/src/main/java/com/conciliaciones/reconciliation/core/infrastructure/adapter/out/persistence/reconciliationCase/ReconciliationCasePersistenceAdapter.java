@@ -2,7 +2,10 @@ package com.conciliaciones.reconciliation.core.infrastructure.adapter.out.persis
 
 import com.conciliaciones.domain.entity.ReconciliationCaseEntity;
 import com.conciliaciones.persistence.repository.ReconciliationCaseRepository;
+import com.conciliaciones.persistence.repository.projection.DonutCharValTolProjection;
 import com.conciliaciones.reconciliation.core.application.port.out.reconciliationCase.ReconciliationCasePersistencePort;
+
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,5 +49,13 @@ public class ReconciliationCasePersistenceAdapter implements ReconciliationCaseP
         log.info("LOG INICIO X = deleteReconciliationCasePersistence id={}", id);
         repository.deleteById(id);
         log.info("LOG FIN X = deleteReconciliationCasePersistence id={}", id);
+    }
+
+    @Override
+    public List<DonutCharValTolProjection> charReconcilationCase() {
+        log.info("LOG INICIO X = charReconcilationCase");
+        List<DonutCharValTolProjection> result = repository.charReconcilationCase();
+        log.info("LOG FIN X = charReconcilationCase");
+        return result;
     }
 }

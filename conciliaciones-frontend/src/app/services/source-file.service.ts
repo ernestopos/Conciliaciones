@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { normalizeCollectionResponse } from '../core/services/api-response.utils';
 import { SourceFileModel } from '../models/source-file.model';
+import { DonutChartValue } from '../models/donut-chart.model';
 
 @Injectable({ providedIn: 'root' })
 export class SourceFileService {
@@ -15,6 +16,16 @@ export class SourceFileService {
   list(): Observable<SourceFileModel[]> {
     return this.http
       .get<unknown>(this.resourceUrl)
-      .pipe(map((response) => normalizeCollectionResponse<SourceFileModel>(response)));
+      .pipe(
+        map((response) =>
+          normalizeCollectionResponse<SourceFileModel>(response)
+        )
+      );
+  }
+
+  getFileUploadsChart(): Observable<DonutChartValue[]> {
+    return this.http.get<DonutChartValue[]>(
+      `${this.resourceUrl}/charFileUploads`
+    );
   }
 }

@@ -1,7 +1,11 @@
 package com.conciliaciones.reconciliation.core.application.port.out.reconciliationCase;
 
 import com.conciliaciones.domain.entity.ReconciliationCaseEntity;
+
+import java.util.List;
 import java.util.Optional;
+
+import com.conciliaciones.persistence.repository.projection.DonutCharValTolProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -10,4 +14,5 @@ public interface ReconciliationCasePersistencePort {
     Optional<ReconciliationCaseEntity> findById(Long id);
     Page<ReconciliationCaseEntity> findAll(Pageable pageable);
     void deleteById(Long id);
+    List<DonutCharValTolProjection> charReconcilationCase();
 }

@@ -1,5 +1,6 @@
 package com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.policy;
 
+import com.conciliaciones.persistence.repository.projection.DonutCharValTolProjection;
 import com.conciliaciones.reconciliation.core.application.port.in.policy.CreatePolicyUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.policy.DeletePolicyUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.policy.GetPolicyByIdUseCase;
@@ -14,6 +15,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -22,8 +24,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/api/v1/policies")
+@RequestMapping("/api/core/v1/policies")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Policy", description = "Operaciones CRUD para Pólizas")
@@ -68,12 +72,18 @@ public class PolicyController {
         return response;
     }
 
+    @GetMapping("/charPolicyCreate")
+    public List<DonutCharValTolProjection> charPolicyCreate() {
+        log.info("LOG INICIO X = charPolicyCreate page={} size={}");
+        List<DonutCharValTolProjection> response = createPolicyUseCase.charPolicyCreate();
+        log.info("LOG FIN X = charPolicyCreate totalElements={}",response.size());
+        return response;
+    }
+
     @PutMapping("/{id}")
     public PolicyResponse update(@PathVariable Long id, @Valid @RequestBody UpdatePolicyRequest request, @AuthenticationPrincipal Jwt jwt) {
         log.info("LOG INICIO X = updatePolicyController id={}", id);
-
         PolicyResponse response = updatePolicyUseCase.update(id, request, AuthenticatedUserResolver.resolveUsername(jwt));
-
         log.info("LOG FIN X = updatePolicyController id={}", response.id());
         return response;
     }

@@ -11,7 +11,7 @@ import org.springframework.web.client.RestClient;
 
 @Slf4j
 @Configuration
-@EnableConfigurationProperties(KeycloakProperties.class)
+@EnableConfigurationProperties({KeycloakProperties.class,SecureBrowserProperties.class})
 public class BeanConfig {
 
     @Bean

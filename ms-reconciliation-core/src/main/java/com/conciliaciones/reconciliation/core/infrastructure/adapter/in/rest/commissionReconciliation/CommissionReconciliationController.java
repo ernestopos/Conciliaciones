@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/commission-reconciliations")
+@RequestMapping("/api/core/v1/commission-reconciliations")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Commission Reconciliations", description = "Consulta y generación de pagos desde conciliaciones de comisiones")
@@ -47,10 +47,7 @@ public class CommissionReconciliationController {
     @GetMapping("/{commissionStatementItemId}")
     public CommissionReconciliationResponse getById(@PathVariable Long commissionStatementItemId) {
         log.info("LOG INICIO X = getCommissionReconciliationByIdController id={}", commissionStatementItemId);
-
-        CommissionReconciliationResponse response =
-                getCommissionReconciliationByIdUseCase.getByCommissionStatementItemId(commissionStatementItemId);
-
+        CommissionReconciliationResponse response = getCommissionReconciliationByIdUseCase.getByCommissionStatementItemId(commissionStatementItemId);
         log.info("LOG FIN X = getCommissionReconciliationByIdController id={}", response.getCommissionStatementItemId());
         return response;
     }

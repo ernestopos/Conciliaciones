@@ -59,7 +59,7 @@ public class StartPaymentProcessTask extends AbstractManagementTask {
                 sourceFileId, candidates.size(), createdDetails, excludedDetails, totalPayable);
     }
 
-    private List<PaymentCandidate> findApprovedPoliciesPendingPayment(Long sourceFileId) {
+    private List<PaymentCandidate> findApprovedPoliciesPendingPaymentBefore(Long sourceFileId) {
         List<Object[]> rows = entityManager.createQuery("""
                         SELECT policy, statement, item
                           FROM CommissionStatementItemEntity item,
@@ -87,6 +87,47 @@ public class StartPaymentProcessTask extends AbstractManagementTask {
                         (PolicyEntity) row[0],
                         (CommissionStatementEntity) row[1],
                         (CommissionStatementItemEntity) row[2]))
+                .toList();
+    }
+
+    private List<PaymentCandidate> findApprovedPoliciesPendingPayment(Long sourceFileId) {
+        List<Object[]> rows = entityManager.createQuery("""
+                    SELECT policy, statement, item
+                      FROM CommissionStatementItemEntity item,
+                           CommissionStatementEntity statement,
+                           PolicyEntity policy
+                     WHERE item.commissionStatementId = statement.id
+                       AND statement.policyId = policy.id
+                       AND statement.sourceFileId = :sourceFileId
+                       AND policy.active = TRUE
+                       AND (
+                            LOWER(policy.statusId.value) = LOWER(:approvedStatus)
+                            OR LOWER(policy.statusId.name) = LOWER(:approvedStatus)
+                       )
+                       AND NOT EXISTS (
+                            SELECT 1
+                              FROM CommissionPaymentDetailEntity detail
+                             WHERE detail.policyId.id = policy.id
+                               AND detail.commissionStatementItemId.id = item.id
+                       )
+                       AND NOT EXISTS (
+                            SELECT 1
+                              FROM ReconciliationCaseEntity reconciliationCase
+                             WHERE reconciliationCase.commissionStatementItemId = item.id
+                       )
+                     ORDER BY statement.producerId ASC,
+                              policy.id ASC,
+                              item.id ASC
+                    """, Object[].class)
+                .setParameter("sourceFileId", sourceFileId)
+                .setParameter("approvedStatus", STATUS_APPROVED)
+                .getResultList();
+        return rows.stream()
+                .map(row -> new PaymentCandidate(
+                        (PolicyEntity) row[0],
+                        (CommissionStatementEntity) row[1],
+                        (CommissionStatementItemEntity) row[2]
+                ))
                 .toList();
     }
 

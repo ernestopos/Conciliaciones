@@ -31,4 +31,6 @@ public interface CommissionReconciliationPersistencePort {
     PolicyEntity savePolicy(PolicyEntity entity);
 
     CommissionPaymentDetailEntity savePayment(CommissionPaymentDetailEntity entity);
+
+    void resolveReconciliationCasesByItemId(Long commissionStatementItemId,Long resolvedStatusId);
 }

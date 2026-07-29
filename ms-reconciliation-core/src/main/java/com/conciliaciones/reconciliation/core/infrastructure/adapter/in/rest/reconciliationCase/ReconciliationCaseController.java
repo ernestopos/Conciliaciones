@@ -1,5 +1,6 @@
     package com.conciliaciones.reconciliation.core.infrastructure.adapter.in.rest.reconciliationCase;
 
+    import com.conciliaciones.persistence.repository.projection.DonutCharValTolProjection;
     import com.conciliaciones.reconciliation.core.application.port.in.reconciliationCase.CreateReconciliationCaseUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.reconciliationCase.DeleteReconciliationCaseUseCase;
 import com.conciliaciones.reconciliation.core.application.port.in.reconciliationCase.GetReconciliationCaseByIdUseCase;
@@ -21,8 +22,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+    import java.util.List;
+
     @RestController
-    @RequestMapping("/api/v1/reconciliation-cases")
+    @RequestMapping("/api/core/v1/reconciliation-cases")
     @RequiredArgsConstructor
     @Slf4j
     @Tag(name = "ReconciliationCase", description = "Operaciones CRUD para ReconciliationCase")
@@ -76,12 +79,20 @@ import org.springframework.web.bind.annotation.*;
             log.info("LOG FIN X = deleteReconciliationCaseController id={}", id);
         }
 
-@PostMapping("/{id}/reprocess")
-public ReconciliationCaseResponse reprocess(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
-    log.info("LOG INICIO X = reprocessReconciliationCaseController id={}", id);
-    ReconciliationCaseResponse response = reprocessReconciliationCaseUseCase.reprocess(id, AuthenticatedUserResolver.resolveUsername(jwt));
-    log.info("LOG FIN X = reprocessReconciliationCaseController id={}", response.id());
-    return response;
-}
+        @PostMapping("/{id}/reprocess")
+        public ReconciliationCaseResponse reprocess(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+            log.info("LOG INICIO X = reprocessReconciliationCaseController id={}", id);
+            ReconciliationCaseResponse response = reprocessReconciliationCaseUseCase.reprocess(id, AuthenticatedUserResolver.resolveUsername(jwt));
+            log.info("LOG FIN X = reprocessReconciliationCaseController id={}", response.id());
+            return response;
+        }
+
+        @GetMapping("/charReconcilationCase")
+        public List<DonutCharValTolProjection> charReconcilationCase() {
+            log.info("LOG INICIO X = charPolicyCreate page={} size={}");
+            List<DonutCharValTolProjection> response = listReconciliationCasesUseCase.charReconcilationCase();
+            log.info("LOG FIN X = charPolicyCreate totalElements={}",response.size());
+            return response;
+        }
 
     }

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/execution-plan-tasks")
+@RequestMapping("/api/core/v1/execution-plan-tasks")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Execution Plan Tasks", description = "Consulta de planes de tareas ejecutados")

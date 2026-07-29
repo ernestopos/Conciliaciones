@@ -4,10 +4,7 @@ import com.conciliaciones.domain.entity.CommissionPaymentDetailEntity;
 import com.conciliaciones.domain.entity.CommissionStatementItemEntity;
 import com.conciliaciones.domain.entity.ParameterEntity;
 import com.conciliaciones.domain.entity.PolicyEntity;
-import com.conciliaciones.persistence.repository.CommissionPaymentDetailRepository;
-import com.conciliaciones.persistence.repository.CommissionStatementItemRepository;
-import com.conciliaciones.persistence.repository.ParameterRepository;
-import com.conciliaciones.persistence.repository.PolicyRepository;
+import com.conciliaciones.persistence.repository.*;
 import com.conciliaciones.persistence.repository.projection.CommissionReconciliationView;
 import com.conciliaciones.reconciliation.core.application.port.out.commissionReconciliation.CommissionReconciliationPersistencePort;
 import com.conciliaciones.reconciliation.core.infrastructure.exception.ResourceNotFoundException;
@@ -15,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,6 +28,8 @@ public class CommissionReconciliationPersistenceAdapter implements CommissionRec
     private final PolicyRepository policyRepository;
     private final ParameterRepository parameterRepository;
     private final CommissionPaymentDetailRepository commissionPaymentDetailRepository;
+    private final ReconciliationCaseRepository reconciliationCaseRepository;
+
 
     @Override
     public List<CommissionReconciliationView> findPending(
@@ -39,7 +39,6 @@ public class CommissionReconciliationPersistenceAdapter implements CommissionRec
             String carrierName
     ) {
         return commissionStatementItemRepository.findPendingCommissionReconciliations(
-                APPROVED_STATUS,
                 normalize(producerName),
                 normalize(policyNumber),
                 normalize(agencyName),
@@ -84,6 +83,14 @@ public class CommissionReconciliationPersistenceAdapter implements CommissionRec
     @Override
     public CommissionPaymentDetailEntity savePayment(CommissionPaymentDetailEntity entity) {
         return commissionPaymentDetailRepository.save(entity);
+    }
+
+    @Override
+    public void resolveReconciliationCasesByItemId(
+            Long commissionStatementItemId,
+            Long resolvedStatusId
+    ) {
+        reconciliationCaseRepository.resolveByCommissionStatementItemId(commissionStatementItemId,resolvedStatusId, LocalDateTime.now());
     }
 
     private String normalize(String value) {

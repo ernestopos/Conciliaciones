@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/security/roles")
+@RequestMapping("/api/core/v1/security/roles")
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Security Roles", description = "Operaciones CRUD para roles de seguridad")
